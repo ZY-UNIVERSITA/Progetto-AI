@@ -1,0 +1,61 @@
+{
+  "general": {
+    "seed": 42,
+    "device": "cuda"
+  },
+  "data": {
+    "type": "CNN",
+    "dir": "dataset",
+    "train_dir": "train",
+    "val_dir": "val",
+    "test_dir": "test",
+    "img_size": 64,
+    "batch_size": 32,
+    "num_workers": 0,
+    "grey": false
+  },
+  "model": {
+    "name": "custom_cnn",
+    "backbone": "classic_cnn_v0",
+    "pretrained": {
+      "path": "saved_model",
+      "freeze_backbone": true
+    },
+    "dropout": 0.5,
+    "activation": "relu"
+  },
+  "loss": {
+    "type": "cross_entropy"
+  },
+  "metrics": [
+    "accuracy",
+    "f1"
+  ],
+  "train": {
+    "epochs": 200,
+    "optimizer": {
+      "type": "AdamW",
+      "lr": 0.0005,
+      "weight_decay": 0.0001
+    },
+    "scheduler": {
+      "type": "StepLR",
+      "step_size": 30,
+      "gamma": 0.1,
+      "warmup_epochs": 5
+    },
+    "early_stopping": {
+      "patience": 15,
+      "monitor": "val_loss",
+      "mode": "min"
+    }
+  },
+  "checkpoint": {
+    "dir": "checkpoints/",
+    "save_best_only": true,
+    "keep_top": 3
+  },
+  "logging": {
+    "tensorboard": true
+  }
+}
