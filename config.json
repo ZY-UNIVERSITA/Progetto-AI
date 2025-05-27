@@ -1,18 +1,28 @@
 {
-  "general": {
+  "general_settings": {
     "seed": 42,
-    "device": "cuda"
+    "device": "cuda",
+    "crop": true,
+    "split": true,
+    "data_aug": true
   },
-  "data": {
+  "data_settings": {
     "type": "CNN",
-    "dir": "dataset",
-    "train_dir": "train",
-    "val_dir": "val",
-    "test_dir": "test",
+    "directory": {
+      "general_dir": "data",
+      "input_dir": "input",
+      "output_dir": "output",
+      "dataset_dir": "dataset"
+    },
+    "dataset": {
+      "train_dir": "train",
+      "val_dir": "val",
+      "test_dir": "test"
+    },
     "img_size": 64,
     "batch_size": 32,
     "num_workers": 0,
-    "grey": false
+    "grey": true
   },
   "model": {
     "name": "custom_cnn",
