@@ -181,3 +181,6 @@ ai_venv/
 
 # config
 readme/
+
+# dataset
+data/
