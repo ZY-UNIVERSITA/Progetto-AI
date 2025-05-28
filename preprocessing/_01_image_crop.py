@@ -11,9 +11,9 @@ import os
 GENERAL_SETTINGS: str = "general_settings"
 CROP: str = "crop"
 
+DATA_SETTINGS: str = "data_settings"
 DIRECTORY: str = "directory"
 GENERAL_DIR: str = "general_dir"
-DATA_SETTINGS: str = "data_settings"
 INPUT_DIR: str = "input_dir"
 OUTPUT_DIR: str = "output_dir"
 GREY: str = "grey"
@@ -33,7 +33,7 @@ EXTS = {".jpg", ".jpeg", ".png", ".bmp", ".tif", ".tiff"}
 # ------------------------------------------------------------------
 # CLASSE DI CROP
 # ------------------------------------------------------------------
-class CropImage:
+class ImageCrop:
     def __init__(self, cfg: dict):
         self.cfg: dict = cfg
 
@@ -149,6 +149,8 @@ class CropImage:
         return counter
 
     def cropImage(self) -> bool:
+        print("INIZIO CROP\n" + "-"*20)
+
         input_dir: Path = Path(self.input)
 
         # Verifica che la cartella di input esista
@@ -191,6 +193,8 @@ class CropImage:
                 total_imgs += 1  # aggiorna il totale
 
         # Termina e restituisce il risultato finale
-        print(f"\n FINE CROP: elaborate {total_imgs} immagini")
+        print(f"Elaborate {total_imgs} immagini\n")
+        
+        print("FINE CROP\n" + "-"*20)
 
         return True
