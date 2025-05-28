@@ -76,9 +76,9 @@ class DatasetSplit:
 
         return train, val, test
 
-    def splitDataset(self):
+    def splitDataset(self) -> bool:
         if not self.toSplit:
-            return
+            return False
 
         print("\nINIZIO SPLIT\n" + "-"*20)
 
@@ -125,4 +125,6 @@ class DatasetSplit:
         print("Split concluso. Le immagini sono state salvate in:", dst_root.resolve())
 
         print("\nFINE SPLIT\n" + "-"*20)
+
+        return True
 

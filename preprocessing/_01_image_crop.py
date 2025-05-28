@@ -151,7 +151,7 @@ class ImageCrop:
     def cropImage(self) -> bool:
         
         if not self.toCrop:
-            return
+            return False
         
         print("INIZIO CROP\n" + "-"*20)
 
