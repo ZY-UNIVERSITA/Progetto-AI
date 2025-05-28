@@ -17,7 +17,12 @@
     "dataset": {
       "train_dir": "train",
       "val_dir": "val",
-      "test_dir": "test"
+      "test_dir": "test",
+      "split_value": {
+        "train": 0.7,
+        "val": 0.15,
+        "test": 0.15
+      }
     },
     "img_size": 64,
     "batch_size": 32,
