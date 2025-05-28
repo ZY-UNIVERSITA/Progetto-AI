@@ -2,16 +2,21 @@ import argparse
 from pathlib import Path
 
 from utils.read_file import load_json
-from preprocessing._01_crop import CropImage
+from preprocessing._01_image_crop import ImageCrop
+from preprocessing._02_dataset_split import DatasetSplit
 
 class Train:
     def __init__(self, cfg: str):
-        self.cfg = load_json(cfg)
+        self.cfg: dict = load_json(cfg)
     
-        self.crop_image = CropImage(self.cfg)
+        self.crop_image: ImageCrop = ImageCrop(self.cfg)
+        self.split_dataset: DatasetSplit = DatasetSplit(self.cfg)
         
     def cropImage(self):
         self.crop_image.cropImage()
+
+    def slitDataset(self):
+        self.split_dataset.splitDataset()
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
@@ -20,3 +25,4 @@ if __name__ == "__main__":
 
     train = Train(Path(args.cfg))
     train.cropImage()
+    train.slitDataset()
