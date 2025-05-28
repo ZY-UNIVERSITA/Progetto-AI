@@ -27,7 +27,6 @@ TEST: str = "test"
 
 EXTS = {".jpg", ".jpeg", ".png", ".bmp", ".tif", ".tiff"}
 
-
 # ------------------------------------------------------------------
 # CLASSE DI SPLIT
 # ------------------------------------------------------------------
@@ -78,6 +77,9 @@ class DatasetSplit:
         return train, val, test
 
     def splitDataset(self):
+        if not self.toSplit:
+            return
+
         print("\nINIZIO SPLIT\n" + "-"*20)
 
         random.seed(self.seed)

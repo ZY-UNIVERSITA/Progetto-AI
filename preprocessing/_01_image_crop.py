@@ -149,6 +149,10 @@ class ImageCrop:
         return counter
 
     def cropImage(self) -> bool:
+        
+        if not self.toCrop:
+            return
+        
         print("INIZIO CROP\n" + "-"*20)
 
         input_dir: Path = Path(self.input)
