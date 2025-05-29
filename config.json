@@ -28,7 +28,8 @@
     "img_size": 64,
     "batch_size": 32,
     "num_workers": 0,
-    "grey": true
+    "grey": true,
+    "num_channels": 1
   },
   "data_augmentation": {
     "copies": 10,
