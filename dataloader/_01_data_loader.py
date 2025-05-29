@@ -33,7 +33,7 @@ EXTS = {".jpg", ".jpeg", ".png", ".bmp", ".tif", ".tiff"}
 # ------------------------------------------------------------------
 # CLASSE DI DATA LOADER
 # ------------------------------------------------------------------
-class DataLoader:
+class CNNDataLoader:
     def __init__(self, cfg: dict) -> None:
         self.cfg: dict = cfg
 
@@ -44,15 +44,15 @@ class DataLoader:
         )
 
         self.train_dir: str = os.path.join(
-            self.dataset, cfg[DATA_SETTINGS][DIRECTORY][TRAIN_DIR]
+            self.dataset, cfg[DATA_SETTINGS][DATASET][TRAIN_DIR]
         )
 
         self.val_dir: str = os.path.join(
-            self.dataset, cfg[DATA_SETTINGS][DIRECTORY][VAL_DIR]
+            self.dataset, cfg[DATA_SETTINGS][DATASET][VAL_DIR]
         )
 
         self.test_dir: str = os.path.join(
-            self.dataset, cfg[DATA_SETTINGS][DIRECTORY][TEST_DIR]
+            self.dataset, cfg[DATA_SETTINGS][DATASET][TEST_DIR]
         )
 
         self.image_size: int = cfg[DATA_SETTINGS][IMG_SIZE]
