@@ -45,11 +45,7 @@ class SmallCNN(nn.Module):
             img_size (int): Dimensione laterale dell'immagine quadrata di input
         """
         super().__init__()
-
-        print(f"Numero di classi: {num_classes}")
-        print(f"Numero di canali: {num_channels}")
-        print(f"Dimensione dell'Immagine: {img_size}x{img_size}")
-
+        
         self._num_pooling: int = 1
         self._final_img_size: int = img_size // pow(2, self._num_pooling)
 
