@@ -72,7 +72,8 @@ class CNNDataLoader:
 
         # Trasforma in scala di grigi
         if self.num_channels == 1:
-            transforms.Grayscale(num_output_channels=self.num_channels)
+            grey = transforms.Grayscale(num_output_channels=self.num_channels)
+            self.transform_list.append(grey)
 
         # Trasforma in un tensore di pytorch
         tensor = transforms.ToImage()
