@@ -37,6 +37,7 @@ class DatasetSplit:
         self.toSplit: bool = cfg[GENERAL_SETTINGS][SPLIT]
 
         self.seed: int = cfg[GENERAL_SETTINGS][SEED]
+        random.seed(self.seed)
 
         self.general_dir: str = cfg[DATA_SETTINGS][DIRECTORY][GENERAL_DIR]
 
@@ -81,8 +82,6 @@ class DatasetSplit:
             return False
 
         print("\nINIZIO SPLIT\n" + "-"*20)
-
-        random.seed(self.seed)
 
         # Crea i path di input e output
         src_root: Path = Path(self.input)
