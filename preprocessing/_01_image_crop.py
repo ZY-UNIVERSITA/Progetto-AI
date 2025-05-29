@@ -1,8 +1,5 @@
-import sys
 from pathlib import Path
 import cv2
-import numpy as np
-from utils.read_file import load_json
 import os
 from utils.load_image import imread_unicode
 
@@ -21,7 +18,7 @@ GREY: str = "grey"
 
 # taglio (in pixel) sull’immagine grande
 CROP_TOP = 70  # pixel da togliere in alto
-CROP_BOTTOM = 20 # pixe da togliere da sotto
+CROP_BOTTOM = 20  # pixe da togliere da sotto
 CROP_RIGHT = 91  # pixel da togliere a destra
 
 # griglia (righe, colonne) e spazio interno
@@ -30,6 +27,7 @@ INNER_GAP = 0  # pixel fra le celle
 
 # estensioni accettate
 EXTS = {".jpg", ".jpeg", ".png", ".bmp", ".tif", ".tiff"}
+
 
 # ------------------------------------------------------------------
 # CLASSE DI CROP
@@ -44,8 +42,12 @@ class ImageCrop:
 
         self.general_dir: str = cfg[DATA_SETTINGS][DIRECTORY][GENERAL_DIR]
 
-        self.input: str = os.path.join(self.general_dir, cfg[DATA_SETTINGS][DIRECTORY][INPUT_DIR])
-        self.output: str = os.path.join(self.general_dir, cfg[DATA_SETTINGS][DIRECTORY][OUTPUT_DIR])
+        self.input: str = os.path.join(
+            self.general_dir, cfg[DATA_SETTINGS][DIRECTORY][INPUT_DIR]
+        )
+        self.output: str = os.path.join(
+            self.general_dir, cfg[DATA_SETTINGS][DIRECTORY][OUTPUT_DIR]
+        )
 
     def save_cell(self, cell_img, dest_path: str) -> bool:
         """
@@ -89,7 +91,9 @@ class ImageCrop:
 
         # 2) Crop regione
         h, w = img.shape[:2]
-        region = img[CROP_TOP:h-CROP_BOTTOM, 0 : w - CROP_RIGHT]  # coordinate y  # coordinate x
+        region = img[
+            CROP_TOP : h - CROP_BOTTOM, 0 : w - CROP_RIGHT
+        ]  # coordinate y  # coordinate x
 
         # 3) Dimensione di ogni cella
         cell_h = (region.shape[0] - INNER_GAP * (ROWS - 1)) // ROWS
@@ -118,11 +122,11 @@ class ImageCrop:
         return counter
 
     def cropImage(self) -> bool:
-        
+
         if not self.toCrop:
             return False
-        
-        print("INIZIO CROP\n" + "-"*20)
+
+        print("INIZIO CROP\n" + "-" * 20)
 
         input_dir: Path = Path(self.input)
 
@@ -137,7 +141,7 @@ class ImageCrop:
         subfolders = [p for p in input_dir.iterdir() if p.is_dir()]
 
         # Contatore globale di immagini processate
-        total_imgs = 0  
+        total_imgs = 0
 
         # Itera ogni sottocartella (es. input/年, input/火, ...)
         for class_dir in subfolders:
@@ -167,7 +171,7 @@ class ImageCrop:
 
         # Termina e restituisce il risultato finale
         print(f"Elaborate {total_imgs} immagini\n")
-        
-        print("FINE CROP\n" + "-"*20)
+
+        print("FINE CROP\n" + "-" * 20)
 
         return True

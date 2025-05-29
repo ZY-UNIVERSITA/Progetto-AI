@@ -4,7 +4,7 @@
     "device": "cuda",
     "crop": false,
     "split": false,
-    "data_aug": true
+    "data_aug": false
   },
   "data_settings": {
     "type": "CNN",
@@ -34,13 +34,13 @@
     "copies": 10,
     "random_affine": true,
     "random_perspective": true,
-    "random_elastic": false,
     "random_color_jitter": true,
     "random_sharpness": true,
     "random_apply": true,
-    "random_contrast": false,
-    "random_equalize": false,
-    "random_erasing": true
+    "random_erasing": true,
+    "random_elastic": true,
+    "random_contrast": true,
+    "random_equalize": true
   },
   "model": {
     "name": "custom_cnn",

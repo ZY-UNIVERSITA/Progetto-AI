@@ -1,7 +1,6 @@
 import os
 from torchvision.transforms import v2 as transforms
 from pathlib import Path
-import cv2
 import torch
 
 from torchvision.utils import save_image
