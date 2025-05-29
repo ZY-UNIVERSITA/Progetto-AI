@@ -34,31 +34,31 @@ class DatasetSplit:
     def __init__(self, cfg: dict):
         self.cfg: dict = cfg
 
-        self.toSplit: bool = cfg[GENERAL_SETTINGS][SPLIT]
+        self.toSplit: bool = self.cfg[GENERAL_SETTINGS][SPLIT]
 
-        self.seed: int = cfg[GENERAL_SETTINGS][SEED]
+        self.seed: int = self.cfg[GENERAL_SETTINGS][SEED]
         random.seed(self.seed)
 
-        self.general_dir: str = cfg[DATA_SETTINGS][DIRECTORY][GENERAL_DIR]
+        self.general_dir: str = self.cfg[DATA_SETTINGS][DIRECTORY][GENERAL_DIR]
 
         self.input: str = os.path.join(
-            self.general_dir, cfg[DATA_SETTINGS][DIRECTORY][INPUT_DIR]
+            self.general_dir, self.cfg[DATA_SETTINGS][DIRECTORY][INPUT_DIR]
         )
         self.output: str = os.path.join(
-            self.general_dir, cfg[DATA_SETTINGS][DIRECTORY][OUTPUT_DIR]
+            self.general_dir, self.cfg[DATA_SETTINGS][DIRECTORY][OUTPUT_DIR]
         )
 
         self.train: str = os.path.join(
-            self.output, cfg[DATA_SETTINGS][DATASET][TRAIN_DIR]
+            self.output, self.cfg[DATA_SETTINGS][DATASET][TRAIN_DIR]
         )
-        self.val: str = os.path.join(self.output, cfg[DATA_SETTINGS][DATASET][VAL_DIR])
+        self.val: str = os.path.join(self.output, self.cfg[DATA_SETTINGS][DATASET][VAL_DIR])
         self.test: str = os.path.join(
-            self.output, cfg[DATA_SETTINGS][DATASET][TEST_DIR]
+            self.output, self.cfg[DATA_SETTINGS][DATASET][TEST_DIR]
         )
 
-        self.train_value: float = cfg[DATA_SETTINGS][DATASET][SPLIT_VALUE][TRAIN]
-        self.val_value: float = cfg[DATA_SETTINGS][DATASET][SPLIT_VALUE][VAL]
-        self.test_value: float = cfg[DATA_SETTINGS][DATASET][SPLIT_VALUE][TEST]
+        self.train_value: float = self.cfg[DATA_SETTINGS][DATASET][SPLIT_VALUE][TRAIN]
+        self.val_value: float = self.cfg[DATA_SETTINGS][DATASET][SPLIT_VALUE][VAL]
+        self.test_value: float = self.cfg[DATA_SETTINGS][DATASET][SPLIT_VALUE][TEST]
 
 
     def split(self, images: list[Path]) -> list[list[Path]]:

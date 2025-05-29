@@ -36,17 +36,17 @@ class ImageCrop:
     def __init__(self, cfg: dict):
         self.cfg: dict = cfg
 
-        self.toCrop: bool = cfg[GENERAL_SETTINGS][CROP]
+        self.toCrop: bool = self.cfg[GENERAL_SETTINGS][CROP]
 
-        self.grey: bool = cfg[DATA_SETTINGS][GREY]
+        self.grey: bool = self.cfg[DATA_SETTINGS][GREY]
 
-        self.general_dir: str = cfg[DATA_SETTINGS][DIRECTORY][GENERAL_DIR]
+        self.general_dir: str = self.cfg[DATA_SETTINGS][DIRECTORY][GENERAL_DIR]
 
         self.input: str = os.path.join(
-            self.general_dir, cfg[DATA_SETTINGS][DIRECTORY][INPUT_DIR]
+            self.general_dir, self.cfg[DATA_SETTINGS][DIRECTORY][INPUT_DIR]
         )
         self.output: str = os.path.join(
-            self.general_dir, cfg[DATA_SETTINGS][DIRECTORY][OUTPUT_DIR]
+            self.general_dir, self.cfg[DATA_SETTINGS][DIRECTORY][OUTPUT_DIR]
         )
 
     def save_cell(self, cell_img, dest_path: str) -> bool:

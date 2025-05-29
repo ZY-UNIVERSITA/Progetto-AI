@@ -46,37 +46,37 @@ class DataAugmentation:
     def __init__(self, cfg: dict) -> None:
         self.cfg: dict = cfg
 
-        self.toAug: bool = cfg[GENERAL_SETTINGS][DATA_AUG]
+        self.toAug: bool = self.cfg[GENERAL_SETTINGS][DATA_AUG]
 
-        self.seed: int = cfg[GENERAL_SETTINGS][SEED]
+        self.seed: int = self.cfg[GENERAL_SETTINGS][SEED]
         torch.manual_seed(self.seed)
         torch.cuda.manual_seed_all(self.seed)
 
-        self.general_dir: str = cfg[DATA_SETTINGS][DIRECTORY][GENERAL_DIR]
+        self.general_dir: str = self.cfg[DATA_SETTINGS][DIRECTORY][GENERAL_DIR]
 
         self.input: str = os.path.join(
             self.general_dir,
-            cfg[DATA_SETTINGS][DIRECTORY][DATASET_DIR],
-            cfg[DATA_SETTINGS][DATASET][TRAIN_DIR],
+            self.cfg[DATA_SETTINGS][DIRECTORY][DATASET_DIR],
+            self.cfg[DATA_SETTINGS][DATASET][TRAIN_DIR],
         )
 
         self.output: str = os.path.join(
             self.general_dir,
-            cfg[DATA_SETTINGS][DIRECTORY][DATASET_DIR],
-            cfg[DATA_SETTINGS][DATASET][TRAIN_DIR_AUG],
+            self.cfg[DATA_SETTINGS][DIRECTORY][DATASET_DIR],
+            self.cfg[DATA_SETTINGS][DATASET][TRAIN_DIR_AUG],
         )
 
-        self.copies: int = cfg[DATA_AUGMENTATION][COPIES]
+        self.copies: int = self.cfg[DATA_AUGMENTATION][COPIES]
 
-        self.randomAffine: bool = cfg[DATA_AUGMENTATION][RANDOM_AFFINE]
-        self.randomProspective: bool = cfg[DATA_AUGMENTATION][RANDOM_PERSPECTIVE]
-        self.randomElastic: bool = cfg[DATA_AUGMENTATION][RANDOM_ELASTIC]
-        self.randomColorJitter: bool = cfg[DATA_AUGMENTATION][RANDOM_COLOR_JITTER]
-        self.randomSharpness: bool = cfg[DATA_AUGMENTATION][RANDOM_SHARPNESS]
-        self.randomApply: bool = cfg[DATA_AUGMENTATION][RANDOM_APPLY]
-        self.randomContrast: bool = cfg[DATA_AUGMENTATION][RANDOM_CONTRAST]
-        self.randomEqualize: bool = cfg[DATA_AUGMENTATION][RANDOM_EQUALIZE]
-        self.randomErasing: bool = cfg[DATA_AUGMENTATION][RANDOM_ERASING]
+        self.randomAffine: bool = self.cfg[DATA_AUGMENTATION][RANDOM_AFFINE]
+        self.randomProspective: bool = self.cfg[DATA_AUGMENTATION][RANDOM_PERSPECTIVE]
+        self.randomElastic: bool = self.cfg[DATA_AUGMENTATION][RANDOM_ELASTIC]
+        self.randomColorJitter: bool = self.cfg[DATA_AUGMENTATION][RANDOM_COLOR_JITTER]
+        self.randomSharpness: bool = self.cfg[DATA_AUGMENTATION][RANDOM_SHARPNESS]
+        self.randomApply: bool = self.cfg[DATA_AUGMENTATION][RANDOM_APPLY]
+        self.randomContrast: bool = self.cfg[DATA_AUGMENTATION][RANDOM_CONTRAST]
+        self.randomEqualize: bool = self.cfg[DATA_AUGMENTATION][RANDOM_EQUALIZE]
+        self.randomErasing: bool = self.cfg[DATA_AUGMENTATION][RANDOM_ERASING]
 
         self.transform_list: list = []
         self.createTransformationPipeline()
@@ -117,8 +117,13 @@ class DataAugmentation:
 
         # Applica una trasformazione elastica (water-like-effect) per distorcere l'immagine
         if self.randomElastic:
-            elastic = transforms.ElasticTransform(
-                alpha=30.0, sigma=4.0, p=0.2, fill=(255, 255, 255)
+            elastic = transforms.RandomApply(
+                [
+                    transforms.ElasticTransform(
+                        alpha=30.0, sigma=4.0, fill=(255, 255, 255)
+                    )
+                ],
+                p=0.3,
             )
 
             self.transform_list.append(elastic)
