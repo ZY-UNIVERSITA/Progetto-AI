@@ -1,6 +1,6 @@
 ## Step per ricreare la virtual environment
 
-1. Installare Python 2.12  
+1. Installare Python 2.12 e settarlo come interprete Python 
 2. Eseguire il comando per creare la virtual environment:  
    ```bash
    python -m venv ai_venv
