@@ -99,7 +99,7 @@ class DataAugmentation:
                         scale=(0.9, 1.1),
                         shear=(-5, 5, -5, 5),
                         # interpolation=transforms.InterpolationMode.NEAREST,
-                        fill=(255, 255, 255),
+                        fill=255,
                     )
                 ],
                 p=1,
@@ -110,7 +110,7 @@ class DataAugmentation:
         # Deforma l'immagine simulando una prospettiva diversa
         if self.randomProspective:
             perspective = transforms.RandomPerspective(
-                distortion_scale=0.2, p=0.4, fill=(255, 255, 255)
+                distortion_scale=0.2, p=0.4, fill=255
             )
 
             self.transform_list.append(perspective)
@@ -120,7 +120,7 @@ class DataAugmentation:
             elastic = transforms.RandomApply(
                 [
                     transforms.ElasticTransform(
-                        alpha=30.0, sigma=4.0, fill=(255, 255, 255)
+                        alpha=30.0, sigma=4.0, fill=255
                     )
                 ],
                 p=0.3,
