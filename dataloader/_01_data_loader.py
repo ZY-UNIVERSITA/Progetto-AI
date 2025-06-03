@@ -66,6 +66,12 @@ class CNNDataLoader:
 
     # Trasformazioni
     def transform(self) -> None:
+        # Trasforma in un tensore di pytorch
+        tensor = transforms.ToImage()
+        self.transform_list.append(tensor)
+        tensor_float = transforms.ToDtype(torch.float32, scale=True)
+        self.transform_list.append(tensor_float)
+
         # Resize
         resize = transforms.Resize((self.image_size, self.image_size))
         self.transform_list.append(resize)
@@ -75,25 +81,18 @@ class CNNDataLoader:
             grey = transforms.Grayscale(num_output_channels=self.num_channels)
             self.transform_list.append(grey)
 
-        # Trasforma in un tensore di pytorch
-        tensor = transforms.ToImage()
-        self.transform_list.append(tensor)
-        tensor_float = transforms.ToDtype(torch.float32, scale=True)
-        self.transform_list.append(tensor_float)
-
         # Normalizza i dati
         normalize = transforms.Normalize(
             [0.5] * self.num_channels, [0.5] * self.num_channels
         )
         self.transform_list.append(normalize)
 
-    def createDataset(
+    def createDatasetTraining(
         self,
-    ) -> Tuple[DataLoader, DataLoader, DataLoader, dict[str, int]]:
+    ) -> Tuple[DataLoader, DataLoader, dict[str, int]]:
         # Carica i dati
         train_ds = datasets.ImageFolder(self.train_dir, self.compose)
         val_ds = datasets.ImageFolder(self.val_dir, self.compose)
-        test_ds = datasets.ImageFolder(self.test_dir, self.compose)
 
         # Crea il data loader
         train_dl = DataLoader(
@@ -102,8 +101,14 @@ class CNNDataLoader:
         val_dl = DataLoader(
             val_ds, self.batch_size, shuffle=False, num_workers=self.num_workers
         )
+        
+        return train_dl, val_dl, train_ds.class_to_idx
+    
+    def createDatasetTest(self) -> DataLoader:
+        test_ds = datasets.ImageFolder(self.test_dir, self.compose)
+
         test_dl = DataLoader(
             test_ds, self.batch_size, shuffle=False, num_workers=self.num_workers
         )
 
-        return train_dl, val_dl, test_dl, train_ds.class_to_idx
+        return test_dl
