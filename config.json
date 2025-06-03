@@ -2,9 +2,9 @@
   "general_settings": {
     "seed": 42,
     "device": "cuda",
-    "crop": false,
-    "split": false,
-    "data_aug": false
+    "crop": true,
+    "split": true,
+    "data_aug": true
   },
   "data_settings": {
     "type": "CNN",
@@ -27,7 +27,7 @@
     },
     "img_size": 64,
     "batch_size": 32,
-    "num_workers": 0,
+    "num_workers": 2,
     "grey": true,
     "num_channels": 1
   },
@@ -45,9 +45,10 @@
   },
   "model": {
     "name": "custom_cnn",
-    "backbone": "classic_cnn_v0",
+    "backbone": "CNN_v0",
     "pretrained": {
-      "path": "saved_model",
+      "name": "CNN_v0_20250602-211752.pth",
+      "path": "checkpoints/",
       "freeze_backbone": true
     },
     "dropout": 0.5,
@@ -61,9 +62,9 @@
     "f1"
   ],
   "train": {
-    "epochs": 200,
+    "epochs": 10,
     "optimizer": {
-      "type": "AdamW",
+      "type": "Adam",
       "lr": 0.0005,
       "weight_decay": 0.0001
     },
