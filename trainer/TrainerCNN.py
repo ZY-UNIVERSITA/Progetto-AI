@@ -16,7 +16,7 @@ from utils import ColoredPrint
 
 import time
 
-from utils import EarlyStopping
+from utils import EarlyStopping, ConfigKeys, LR_scheduler
 
 # ------------------------------------------------------------------
 # PARAMETRI DA PERSONALIZZARE
@@ -95,6 +95,13 @@ class TrainerCNN:
         self.lr = self.cfg[TRAIN][OPTIMIZER][LR]
         self.optimizer = optim.Adam(self.model.parameters(), lr=self.lr)
 
+        # lr scheduler
+        self.scheduler_name: str = self.cfg[ConfigKeys.TRAIN][ConfigKeys.SCHEDULER][ConfigKeys.SCHEDULER_TYPE]
+        self.scheduler_kwargs: dict[str, any] = self.cfg[ConfigKeys.TRAIN][ConfigKeys.SCHEDULER][ConfigKeys.SCHEDULER_ARGS]
+        self.scheduler_class: LR_scheduler = LR_scheduler(self.scheduler_name, self.optimizer, self.scheduler_kwargs)
+        self.scheduler, self.scheduler_type = self.scheduler_class.get_scheduler()
+        # self.scheduler: optim.lr_scheduler.LRScheduler = optim.lr_scheduler.StepLR(self.optimizer, step_size=1, gamma=0.1)
+
         # loss function
         self.loss = nn.CrossEntropyLoss()
 
@@ -105,11 +112,10 @@ class TrainerCNN:
         self.epochs: int = self.cfg[TRAIN][EPOCHS]
 
         # training engine
-        self.training_engine = CNNEngine(self.model, self.loss, self.optimizer, self.device)
+        self.training_engine = CNNEngine(self.model, self.loss, self.optimizer, self.scheduler, self.device)
 
         # Save model
         self.checkpoint = self.cfg[CHECKPOINT][CHECKPOINT_DIR]
-
 
         self.model_saved: bool = False
         self.early_stopping: EarlyStopping = EarlyStopping(self.cfg, self.save_model)
@@ -147,6 +153,9 @@ class TrainerCNN:
             train_loss, train_accuracy = self.training_engine.exec_epoch(self.train_dl, TRAIN)
             val_loss, val_accuracy = self.training_engine.exec_epoch(self.val_dl, VAL)
 
+            # esegue la modifica del lr ogni step_size epoca
+            self.scheduler.step()
+
             # Mostra loss e accuracy
             print(f"Train loss: {train_loss:.3f} | Train acc: {train_accuracy:.2f}%")
             print(f"Val loss: {val_loss:.3f} | Val acc: {val_accuracy:.2f}%")
@@ -160,7 +169,6 @@ class TrainerCNN:
             # Valuta se stoppare l'addestramento
             self.early_stopping.calculateWhenStop(epoch, val_accuracy, val_loss, self.model_saved)
 
-            
             self.model_saved = False
 
             # Tempo di fine epoca
