@@ -49,3 +49,8 @@ class ConfigKeys(str, Enum):
     IMPROVEMENT_RATE = "improvement_rate"
     MONITOR = "monitor"
     MODE = "mode"
+
+    # Scheduler
+    SCHEDULER: str = "scheduler"
+    SCHEDULER_ARGS: str = "scheduler_args"
+    SCHEDULER_TYPE: str = "type"
