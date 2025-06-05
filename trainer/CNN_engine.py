@@ -5,15 +5,20 @@ from typing import Tuple
 
 from tqdm import tqdm
 
+from utils import ColoredPrint, Metrics
+
+from torch.optim.lr_scheduler import LRScheduler
+
 TRAIN: str = "train"
 VAL: str = "val"
 TEST: str = "test"
 
-class TrainingEngine:
-    def __init__(self, model: nn.Module, loss, optimizer, device):
+class CNNEngine:
+    def __init__(self, model: nn.Module, loss, optimizer, scheduler: LRScheduler, device):
         self.model: nn.Module = model
         self.loss = loss
         self.optimizer = optimizer
+        self.scheduler = scheduler
         self.device = device
 
     def exec_epoch(self, dataLoader: DataLoader, tqdm_desc: str) -> Tuple[float, float]:
@@ -33,10 +38,16 @@ class TrainingEngine:
             self.model.eval()
 
         # Barra di progresso del training/val/test
-        progress_bar: tqdm = tqdm(dataLoader, desc=tqdm_desc)
+        progress_bar: tqdm = tqdm(dataLoader, desc=tqdm_desc, disable=False)
+
+        real_y = []
+        pred_y = []
+
+        ColoredPrint.cyan("\nINIZIO ELABORAZIONE DEL MODELLO\n" + "-" * 20)
 
         # Carica i dati per batch
         for images, labels in progress_bar:
+            
             # Spostamento delle immagini e etichette sul device di elaborazione (CPU o GPU)
             images, labels = images.to(self.device), labels.to(self.device)
 
@@ -79,8 +90,17 @@ class TrainingEngine:
                 acc=100 * correct / total,
             )
 
+            real_y = real_y + labels.tolist()
+            pred_y = pred_y + preds.tolist()
+
+            mt = Metrics(labels, real_y, pred_y)
+
+            print(f"val: {mt.accuracy()}")
+
         # calcola la loss e l'accuracy
         avg_loss: float = total_loss / total
         avg_acc: float = 100 * correct / total
+        
+        ColoredPrint.cyan("\nFINE ELABORAZIONE DEL MODELLO\n" + "-" * 20)
 
         return avg_loss, avg_acc
