@@ -9,4 +9,4 @@ from .read_file import load_json as load_JSON
 __all__ = ["ColoredPrint", "EarlyStopping", "Metrics", "ConfigKeys", "LR_scheduler", "load_JSON"]
 
 # Codice di inizializzazione
-print("Il package degli utils è stato importato!")
+# print("Il package degli utils è stato importato!")

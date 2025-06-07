@@ -4,4 +4,4 @@ from ._01_data_loader import CNNDataLoader
 __all__ = ["CNNDataLoader"]
 
 # Codice di inizializzazione
-print("Il package di data loader è stato importato!")
+# print("Il package di data loader è stato importato!")

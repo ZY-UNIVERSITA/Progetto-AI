@@ -7,5 +7,5 @@ from ._03_data_augmentation import DataAugmentation
 __all__ = ["ImageCrop", "DatasetSplit", "DataAugmentation"]
 
 # Codice di inizializzazione
-print("Il package di pre-processing è stato importato!")
+# print("Il package di pre-processing è stato importato!")
 

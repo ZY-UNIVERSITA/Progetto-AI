@@ -90,22 +90,12 @@ class TrainerCNN:
         self.image_size: int = self.cfg[DATA_SETTINGS][IMG_SIZE]
 
         # get model
-        # self.model: nn.Module = get_model(
-        #     name=self.model_name,
-        #     num_classes=self.num_classes,
-        #     num_channels=self.num_channels,
-        #     img_size=self.image_size,
-        # ).to(self.device)
-
         self.model: nn.Module = get_model(
-            name="self",
+            name=self.model_name,
             num_classes=self.num_classes,
             num_channels=self.num_channels,
             img_size=self.image_size,
-            model_cfg=self.model_config
         ).to(self.device)
-
-
 
 
         # training parameters
