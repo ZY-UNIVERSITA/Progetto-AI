@@ -16,5 +16,7 @@ class LR_scheduler():
         self.kwargs = kwargs
 
     def get_scheduler(self) -> Tuple[torch.optim.lr_scheduler.LRScheduler, str]:
+        if self.name == "none":
+            return None, "none"
         if self.name == "steplr":
-            return torch.optim.lr_scheduler.StepLR(optim, **self.kwargs), "epoch"
+            return torch.optim.lr_scheduler.StepLR(self.optim, **self.kwargs), "epoch"
