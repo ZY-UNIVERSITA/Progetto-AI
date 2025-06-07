@@ -1,0 +1,71 @@
+{
+    "convolutional_layer": [
+        [
+            {
+                "layer_type": "conv_2d",
+                "output_channels": 32
+            },
+            {
+                "layer_type": "conv_2d",
+                "output_channels": 32
+            },
+            {
+                "layer_type": "relu"
+            },
+            {
+                "layer_type": "max_pool_2d",
+                "kernel_size": 2
+            }
+        ],
+        [
+            {
+                "layer_type": "conv_2d",
+                "output_channels": 64
+            },
+            {
+                "layer_type": "conv_2d",
+                "output_channels": 64
+            },
+            {
+                "layer_type": "relu"
+            },
+            {
+                "layer_type": "max_pool_2d",
+                "kernel_size": 2
+            }
+        ],
+        [
+            {
+               "layer_type": "conv_2d",
+               "output_channels": 128 
+            },
+            {
+                "layer_type": "relu"
+            },
+            {
+                "layer_type": "adaptive_avg_pool_2d"
+            }
+        ]
+    ],
+    "fully_connected_layer": [
+        [
+            {
+                "layer_type": "flatten"
+            }
+        ],
+        [
+            {
+                "layer_type": "linear",
+                "output_channels": 256
+            },
+            {
+                "layer_type": "relu"
+            }
+        ],
+        [
+            {
+                "layer_type": "linear"
+            }
+        ]
+    ]
+}
