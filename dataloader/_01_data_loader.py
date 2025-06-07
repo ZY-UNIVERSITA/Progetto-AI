@@ -15,7 +15,7 @@ DATASET_DIR: str = "dataset_dir"
 
 DATASET: str = "dataset"
 TRAIN: str = "train"
-TRAIN_DIR: str = "train_dir_aug"
+TRAIN_DIR_AUG: str = "train_dir_aug"
 VAL: str = "val"
 VAL_DIR: str = "val_dir"
 TEST: str = "test"
@@ -44,7 +44,7 @@ class CNNDataLoader:
         )
 
         self.train_dir: str = os.path.join(
-            self.dataset, cfg[DATA_SETTINGS][DATASET][TRAIN_DIR]
+            self.dataset, cfg[DATA_SETTINGS][DATASET][TRAIN_DIR_AUG]
         )
 
         self.val_dir: str = os.path.join(
