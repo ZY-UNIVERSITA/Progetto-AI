@@ -35,6 +35,9 @@ class ConfigKeys(str, Enum):
     # Training settings
     EPOCHS = "epochs"
     OPTIMIZER = "optimizer"
+
+    # Optimizer
+    OPTIMIZER_TYPE: str = "type"
     LR = "lr"
 
     # Checkpoint settings
