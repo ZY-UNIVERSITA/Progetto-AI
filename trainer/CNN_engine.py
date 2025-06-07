@@ -14,11 +14,12 @@ VAL: str = "val"
 TEST: str = "test"
 
 class CNNEngine:
-    def __init__(self, model: nn.Module, loss, optimizer, scheduler: LRScheduler, device):
+    def __init__(self, model: nn.Module, loss, optimizer, scheduler: LRScheduler, scheduler_type: str, device):
         self.model: nn.Module = model
         self.loss = loss
         self.optimizer = optimizer
         self.scheduler = scheduler
+        self.scheduler_type = scheduler_type
         self.device = device
 
     def exec_epoch(self, dataLoader: DataLoader, tqdm_desc: str) -> Tuple[float, float]:
@@ -40,8 +41,8 @@ class CNNEngine:
         # Barra di progresso del training/val/test
         progress_bar: tqdm = tqdm(dataLoader, desc=tqdm_desc, disable=False)
 
-        real_y = []
-        pred_y = []
+        # real_y = []
+        # pred_y = []
 
         ColoredPrint.cyan("\nINIZIO ELABORAZIONE DEL MODELLO\n" + "-" * 20)
 
@@ -69,8 +70,13 @@ class CNNEngine:
                 if train:
                     # Calcolo dei gradienti
                     loss.backward()
+
                     # Aggiornamento dei pesi
                     self.optimizer.step()
+
+                    #
+                    if self.scheduler_type == "btach":
+                        self.scheduler.step()
 
             # Aggiorna la perdita totale su tutte le immagini del batch
             total_loss += loss.item() * images.size(0)
@@ -90,12 +96,12 @@ class CNNEngine:
                 acc=100 * correct / total,
             )
 
-            real_y = real_y + labels.tolist()
-            pred_y = pred_y + preds.tolist()
+            # real_y = real_y + labels.tolist()
+            # pred_y = pred_y + preds.tolist()
 
-            mt = Metrics(labels, real_y, pred_y)
+            # mt = Metrics(labels, real_y, pred_y)
 
-            print(f"val: {mt.accuracy()}")
+            # print(f"val: {mt.accuracy()}")
 
         # calcola la loss e l'accuracy
         avg_loss: float = total_loss / total
