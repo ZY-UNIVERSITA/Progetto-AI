@@ -44,7 +44,7 @@ class FlexibleCNNModel(nn.Module):
         self._final_img_size: int = img_size
 
         self.features: nn.Sequential = self._create_conv_layer(
-            self.num_classes, self.cfg[CONV_LAYER]
+            self.num_channels, self.cfg[CONV_LAYER]
         )
 
         self.classifier: nn.Sequential = self._create_fully_connected_layer(
@@ -75,7 +75,7 @@ class FlexibleCNNModel(nn.Module):
                     layers_list.append(layer_constructor)
 
                 elif layer_type == "batch_norm_2d":
-                    layer_type == nn.BatchNorm2d(self.output_channel)
+                    layer_constructor = nn.BatchNorm2d(self.output_channel)
 
                     layers_list.append(layer_constructor)
 
@@ -134,7 +134,7 @@ class FlexibleCNNModel(nn.Module):
 
                     layers_list.append(layer_constructor)
 
-                elif layer_type == "drouput":
+                elif layer_type == "dropout":
                     layer_constructor = nn.Dropout(layer.get(DROPOUT, 0.5))
 
                     layers_list.append(layer_constructor)
