@@ -1,9 +1,9 @@
 from .TrainerCNN import TrainerCNN
-from .InferenceCNN import InferenceCNN
+from .TesterCNN import TesterCNN
 from .CNN_engine import CNNEngine
 
 # Interfaccia pubblica di quello esportabile
-__all__ = ["TrainerCNN", "CNNEngine", "InferenceCNN"]
+__all__ = ["TrainerCNN", "CNNEngine", "TesterCNN"]
 
 # Codice di inizializzazione
-print("Il package dei trainer è stato importato!")
+# print("Il package dei trainer è stato importato!")
