@@ -62,7 +62,7 @@ MODEL_STATE: str = "model_state"
 # ------------------------------------------------------------------
 # CLASSE DI INFERENCE CNN
 # ------------------------------------------------------------------
-class InferenceCNN:
+class TesterCNN:
     def __init__(self, cfg: dict):
         # config
         self.cfg: dict = cfg
