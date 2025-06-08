@@ -1,26 +1,25 @@
+# Import standard library modules
+import json
+import os
+import time
+import datetime
+from pathlib import Path
+
+# Import third-party libraries
 import torch
 import torch.optim as optim
 import torch.nn as nn
 from torch.utils.data import DataLoader
+from torchvision.utils import make_grid
+from torch.utils.tensorboard import SummaryWriter
+
+# Import local modules
 from dataloader import CNNDataLoader
-
 from .CNN_engine import CNNEngine
-
-from datetime import datetime
-
-from pathlib import Path
-
 from models import get_model
-
 from utils import ColoredPrint
-
-import time
-
 from utils import EarlyStopping, ConfigKeys, LR_scheduler
 
-import json
-
-import os
 
 # ------------------------------------------------------------------
 # PARAMETRI DA PERSONALIZZARE
@@ -63,7 +62,7 @@ CHECKPOINT_DIR: str = "dir"
 # CLASSE DI TRAINER CNN
 # ------------------------------------------------------------------
 class TrainerCNN:
-    def __init__(self, cfg: dict, model_config: dict):
+    def __init__(self, cfg: dict, model_config: dict = None):
         # config
         self.cfg: dict = cfg
         self.model_config = model_config
@@ -95,8 +94,8 @@ class TrainerCNN:
             num_classes=self.num_classes,
             num_channels=self.num_channels,
             img_size=self.image_size,
+            model_cfg=self.model_config,
         ).to(self.device)
-
 
         # training parameters
         # optimizer
@@ -104,7 +103,7 @@ class TrainerCNN:
         self.optimizer_name = self.cfg[ConfigKeys.TRAIN][ConfigKeys.OPTIMIZER][
             ConfigKeys.OPTIMIZER_TYPE
         ]
-        self.optimizer = optim.Adam(self.model.parameters(), lr=self.lr)
+        self.optimizer = optim.Adam(self.model.parameters(), lr=self.lr, weight_decay=0.0001)
 
         # lr scheduler
         self.scheduler_name: str = self.cfg[ConfigKeys.TRAIN][ConfigKeys.SCHEDULER][
@@ -135,7 +134,7 @@ class TrainerCNN:
             self.optimizer,
             self.scheduler,
             self.scheduler_type,
-            self.device,
+            self.device
         )
 
         # Save model
@@ -143,6 +142,18 @@ class TrainerCNN:
 
         self.model_saved: bool = False
         self.early_stopping: EarlyStopping = EarlyStopping(self.cfg, self.save_model)
+
+        # Tensorboard
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        log_dir = f'runs/cnn_{self.cfg["model"]["name"]}_{timestamp}'
+        self.writer = SummaryWriter(log_dir)
+
+        # batch di immagini di prova
+        images_batch, _ = next(iter(self.train_dl)) 
+        img_grid = make_grid(images_batch, normalize=True)
+        self.writer.add_image(
+            "Immagini di training", img_grid
+        )
 
     def loggingInfo(self):
         ColoredPrint.blue("\nINIZIO LOGGING TRAINING\n" + "-" * 20)
@@ -208,9 +219,24 @@ class TrainerCNN:
             epoch_duration = end_time - start_time
             ColoredPrint.blue(f"\nL'addestramento è durato {epoch_duration}.")
 
+            # Tensorboard
+            self.writer.add_scalar("train/loss", train_loss, epoch)
+            self.writer.add_scalar("train/accuracy", train_accuracy, epoch)
+            self.writer.add_scalar("validation/loss", val_loss, epoch)
+            self.writer.add_scalar("validation/accuracy", val_accuracy, epoch)
+
             # calcola l'early stop in base all'accuratezza/loss
             if self.early_stopping.stop:
                 break
+
+        # Tensorboard: dati finali
+        self.writer.add_hparams(
+            {"num_epochs": self.epochs, "learning_rate": self.lr},
+            { "metric/best_loss": 1}
+        )
+
+        self.writer.flush()
+        self.writer.close()
 
         ColoredPrint.purple("\nFINE LOOP DI TRAINING\n" + "-" * 20)
 
@@ -239,7 +265,7 @@ class TrainerCNN:
 
         checkpoint_path.mkdir(parents=True, exist_ok=True)
 
-        timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+        timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 
         file_name = f"{self.model_name}_{timestamp}.pth"
 
