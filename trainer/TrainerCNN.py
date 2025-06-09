@@ -116,13 +116,13 @@ class TrainerCNN:
             self.scheduler_name, self.optimizer, **self.scheduler_kwargs
         )
         self.scheduler, self.scheduler_type = self.scheduler_class.get_scheduler()
-        # self.scheduler: optim.lr_scheduler.LRScheduler = optim.lr_scheduler.StepLR(self.optimizer, step_size=1, gamma=0.1)
 
         # loss function
         self.loss = nn.CrossEntropyLoss()
 
-        # Best accuracy
-        self.best_acc: int = 0
+        # Best accuracy e loss
+        self.best_acc: float = 0
+        self.best_loss: float = 0
 
         # epoche
         self.epochs: int = self.cfg[TRAIN][EPOCHS]
@@ -134,7 +134,8 @@ class TrainerCNN:
             self.optimizer,
             self.scheduler,
             self.scheduler_type,
-            self.device
+            self.device,
+            self.class_to_idx
         )
 
         # Save model
@@ -155,22 +156,33 @@ class TrainerCNN:
             "Immagini di training", img_grid
         )
 
+        # grafo del modello
+        self.writer.add_graph(self.model, images_batch)
+
     def loggingInfo(self):
         ColoredPrint.blue("\nINIZIO LOGGING TRAINING\n" + "-" * 20)
 
-        ColoredPrint.purple(f"Device: {self.device}")
+        ColoredPrint.purple(f"Il training viene eseguto sul device: {self.device.upper()}.")
 
-        ColoredPrint.purple(f"Numero di classi trovate: {self.num_classes}")
+        ColoredPrint.purple(f"Il modello scelto è: {self.model_name}.")
+
+        ColoredPrint.purple(
+            f"Lo scheduler usato è: {self.scheduler_name} con i seguenti parametri {self.scheduler_kwargs}."
+        )        
+
+        ColoredPrint.purple(
+            f"La grandezza dell'immagine è: {self.image_size}x{self.image_size}."
+        )
+
+        ColoredPrint.purple(f"Numero di classi trovate: {self.num_classes}.")
         if self.num_classes < 2:
             ColoredPrint.purple(
                 "Il numero di classi è inferiore a 2: c'è una sola classe. La classificazione multiclasse richiede almeno 2 classi."
             )
 
-        ColoredPrint.purple(f"Il modello scelto è: {self.model_name}")
-        ColoredPrint.purple(f"Il numero di canali è: {self.num_channels}")
-        ColoredPrint.purple(
-            f"La grandezza dell'immagine è: {self.image_size}x{self.image_size}"
-        )
+        ColoredPrint.purple(f"Il numero di canali è: {self.num_channels}.")
+
+        ColoredPrint.purple(f"Il modello verrà addestrato su: {self.epochs} epoche.")
 
         ColoredPrint.blue("\nFINE LOGGING TRAINING\n" + "-" * 20)
 
@@ -187,11 +199,17 @@ class TrainerCNN:
             # Tempo di inizio epoca
             start_time: float = time.time()
 
+            
+            ColoredPrint.cyan("\nINIZIO ELABORAZIONE DEL MODELLO\n" + "-" * 20)
+
             # Fai il training e la validazione
             train_loss, train_accuracy = self.training_engine.exec_epoch(
                 self.train_dl, TRAIN
             )
             val_loss, val_accuracy = self.training_engine.exec_epoch(self.val_dl, VAL)
+
+            ColoredPrint.cyan("\nFINE ELABORAZIONE DEL MODELLO\n" + "-" * 20)
+
 
             # esegue la modifica del lr ogni step_size epoca
             if self.scheduler_type == "epoch":
@@ -206,6 +224,9 @@ class TrainerCNN:
                 self.model_saved = True
                 self.best_acc = val_accuracy
                 self.save_model(val_accuracy, val_loss, epoch)
+
+            if val_loss > self.best_loss:
+                self.best_loss = val_loss
 
             # Valuta se stoppare l'addestramento
             self.early_stopping.calculateWhenStop(
@@ -225,6 +246,9 @@ class TrainerCNN:
             self.writer.add_scalar("validation/loss", val_loss, epoch)
             self.writer.add_scalar("validation/accuracy", val_accuracy, epoch)
 
+            current_lr = self.optimizer.param_groups[0]['lr']
+            self.writer.add_scalar('Hyperparameters/learning_rate', current_lr, epoch)
+
             # calcola l'early stop in base all'accuratezza/loss
             if self.early_stopping.stop:
                 break
@@ -232,7 +256,7 @@ class TrainerCNN:
         # Tensorboard: dati finali
         self.writer.add_hparams(
             {"num_epochs": self.epochs, "learning_rate": self.lr},
-            { "metric/best_loss": 1}
+            { "metric/val_best_loss": self.best_loss, "metric/val_best_accuracy": self.best_acc }
         )
 
         self.writer.flush()
