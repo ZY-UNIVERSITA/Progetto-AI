@@ -14,13 +14,14 @@ VAL: str = "val"
 TEST: str = "test"
 
 class CNNEngine:
-    def __init__(self, model: nn.Module, loss, optimizer, scheduler: LRScheduler, scheduler_type: str, device):
+    def __init__(self, model: nn.Module, loss, optimizer, scheduler: LRScheduler, scheduler_type: str, device: str, classes: int, writer = None):
         self.model: nn.Module = model
         self.loss = loss
         self.optimizer = optimizer
         self.scheduler = scheduler
         self.scheduler_type = scheduler_type
         self.device = device
+        self.classes = classes
 
     def exec_epoch(self, dataLoader: DataLoader, tqdm_desc: str) -> Tuple[float, float]:
         # Variabili per calcolare loss e accuracy
@@ -41,10 +42,8 @@ class CNNEngine:
         # Barra di progresso del training/val/test
         progress_bar: tqdm = tqdm(dataLoader, desc=tqdm_desc, disable=False)
 
-        # real_y = []
-        # pred_y = []
-
-        ColoredPrint.cyan("\nINIZIO ELABORAZIONE DEL MODELLO\n" + "-" * 20)
+        real_y = []
+        pred_y = []
 
         # Carica i dati per batch
         for images, labels in progress_bar:
@@ -63,19 +62,19 @@ class CNNEngine:
                 # Calcola le predizioni per tutte le immagini
                 outputs = self.model(images)    
 
-                # Calcolare la perdita per tute le immagini
+                # Calcolare la perdita per tutte le immagini
                 loss = self.loss(outputs, labels)
 
                 # In training, calcola i gradienti e fai la retropropagazione per aggiornare i pesi
                 if train:
-                    # Calcolo dei gradienti
+                    # Calcolo dei gradienti e backpropagation
                     loss.backward()
 
                     # Aggiornamento dei pesi
                     self.optimizer.step()
 
-                    #
-                    if self.scheduler_type == "btach":
+                    # lr scheduler
+                    if self.scheduler_type == "batch":
                         self.scheduler.step()
 
             # Aggiorna la perdita totale su tutte le immagini del batch
@@ -96,17 +95,16 @@ class CNNEngine:
                 acc=100 * correct / total,
             )
 
-            # real_y = real_y + labels.tolist()
-            # pred_y = pred_y + preds.tolist()
+            real_y = real_y + labels.tolist()
+            pred_y = pred_y + preds.tolist()
 
-            # mt = Metrics(labels, real_y, pred_y)
+        mt = Metrics(self.classes, real_y, pred_y)
 
-            # print(f"val: {mt.accuracy()}")
+        mt.report()
 
         # calcola la loss e l'accuracy
         avg_loss: float = total_loss / total
         avg_acc: float = 100 * correct / total
         
-        ColoredPrint.cyan("\nFINE ELABORAZIONE DEL MODELLO\n" + "-" * 20)
 
         return avg_loss, avg_acc
