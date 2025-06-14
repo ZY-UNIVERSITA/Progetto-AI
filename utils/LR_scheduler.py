@@ -19,6 +19,6 @@ class LR_scheduler():
         if self.name == "none":
             return None, "none"
         elif self.name == "steplr":
-            return torch.optim.lr_scheduler.StepLR(self.optim, **self.kwargs), "epoch"
+            return StepLR(self.optim, **self.kwargs), "epoch"
         else:
             raise ValueError(f"Unsupported scheduler name: '{self.name}'")

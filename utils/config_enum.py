@@ -6,6 +6,7 @@ class ConfigKeys(str, Enum):
     DEVICE = "device"
     CUDA = "cuda"
     CPU = "cpu"
+    SEED: str = "seed"
 
     # Data settings
     DATA_SETTINGS = "data_settings"
@@ -38,6 +39,7 @@ class ConfigKeys(str, Enum):
 
     # Optimizer
     OPTIMIZER_TYPE: str = "type"
+    OPTIMIZER_ARGS: str = "optimizer_args"
     LR = "lr"
 
     # Checkpoint settings
@@ -57,3 +59,5 @@ class ConfigKeys(str, Enum):
     SCHEDULER: str = "scheduler"
     SCHEDULER_ARGS: str = "scheduler_args"
     SCHEDULER_TYPE: str = "type"
+    WARMUP: str = "warmup"
+    USE_WARMUP: str = "use_warmup"
