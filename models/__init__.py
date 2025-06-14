@@ -1,10 +1,10 @@
-from .CNN import CNN_v0, CNN_v1, CNN_v3, CNNModel
+from .CNN import CNN_v0, CNN_v1, CNN_v3, model_creator
 
 MODEL_REPOSITORY = {
     "CNN_v0": CNN_v0,
     "CNN_v1": CNN_v1,
     "CNN_v3": CNN_v3,
-    "custom": CNNModel,
+    "custom": model_creator.CNN_creator,
 }
 
 __all__ = ["get_model"]
@@ -26,7 +26,7 @@ def get_model(
             num_classes=num_classes,
             num_channels=num_channels,
             img_size=img_size,
-        )
+        ).get_model()
     else:
         return MODEL_REPOSITORY[name](
             num_classes=num_classes, num_channels=num_channels, img_size=img_size
