@@ -135,18 +135,18 @@ class DataAugmentation:
             self.transform_list.append(elastic)
 
         # Modifica la luminosità e il contrasto dell'immagine
-        if self.randomColorJitter:
-            color_jitter = transforms.RandomApply(
-                [
-                    transforms.ColorJitter(
-                        brightness=0.2,
-                        contrast=0.2,
-                    )
-                ],
-                p=0.3,
-            )
+        # if self.randomColorJitter:
+        #     color_jitter = transforms.RandomApply(
+        #         [
+        #             transforms.ColorJitter(
+        #                 brightness=0.2,
+        #                 contrast=0.2,
+        #             )
+        #         ],
+        #         p=0.3,
+        #     )
 
-            self.transform_list.append(color_jitter)
+        #     self.transform_list.append(color_jitter)
 
         # Regola la nitidezza dell'immagine
         if self.randomSharpness:
@@ -163,16 +163,16 @@ class DataAugmentation:
             self.transform_list.append(gaussianBlur)
 
         # Modifica il contrasto
-        if self.randomContrast:
-            contrast = transforms.RandomAutocontrast(p=0.2)
+        # if self.randomContrast:
+        #     contrast = transforms.RandomAutocontrast(p=0.2)
 
-            self.transform_list.append(contrast)
+        #     self.transform_list.append(contrast)
 
         # Bilancia la distribuzione delle intensità dei pixel
-        if self.randomEqualize:
-            equalize = transforms.RandomEqualize(p=0.2)
+        # if self.randomEqualize:
+        #     equalize = transforms.RandomEqualize(p=0.2)
 
-            self.transform_list.append(equalize)
+        #     self.transform_list.append(equalize)
 
         # Aggiunge del rumore, con parti tagliate
         if self.randomErasing:
