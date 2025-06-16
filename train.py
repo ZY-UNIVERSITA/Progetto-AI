@@ -5,6 +5,8 @@ from utils import load_JSON
 from preprocessing import ImageCrop, DatasetSplit, DataAugmentation
 from trainer import TrainerCNN, TesterCNN
 
+from utils import config_checker
+
 class Train():
     def __init__(self, cfg: str, model_config: str = None):
         self.cfg: dict = load_JSON(cfg)
@@ -32,6 +34,10 @@ class Train():
     def train(self):
         self.trainer.train()
 
+class Test():
+    def __init__(self, cfg: str):
+        self.cfg: dict = load_JSON(cfg)
+
     def loadInference(self):
         self.inferenceClass = TesterCNN(self.cfg)
 
@@ -40,18 +46,24 @@ class Train():
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
+    ap.add_argument("--mode", required=True, help="train/test")
     ap.add_argument("--cfg", required=True, help="config.json")
     ap.add_argument("--cfg_model", required=False, help="model_config.json")
     args = ap.parse_args()
 
-    train = Train(Path(args.cfg), Path(args.cfg_model))
-    train.cropImage()
-    train.slitDataset()
-    train.dataAugmentation()
+    if config_checker(args.cfg, "config_schema/config_schema.json") and config_checker(args.cfg_model, "config_schema/model_config_schema.json"):
+        if args.mode == "train":
+            train = Train(Path(args.cfg), Path(args.cfg_model))
+            
+            train.cropImage()
+            train.slitDataset()
+            train.dataAugmentation()
 
-    train.loadTrainer()
-    train.trainLog()
-    train.train()
+            train.loadTrainer()
+            train.trainLog()
+            train.train()
+        else:
+            test = Test(Path(args.cfg))
 
-    train.loadInference()
-    train.inference()
+            test.loadInference()
+            test.inference()
