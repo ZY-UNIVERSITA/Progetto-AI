@@ -18,7 +18,17 @@ from torch.utils.tensorboard import SummaryWriter
 from dataloader import CNNDataLoader
 from .CNN_engine import CNNEngine
 from models import get_model
-from utils import EarlyStopping, ConfigKeys, LR_scheduler, Optimizer, ColoredPrint
+from utils import (
+    EarlyStopping,
+    ConfigKeys,
+    LR_scheduler,
+    Optimizer,
+    ColoredPrint,
+    save_training_info,
+    save_epoch_info,
+    TrainingInfo,
+    GeneralTrainingInfo,
+)
 
 import matplotlib
 
@@ -52,8 +62,7 @@ matplotlib.rcParams["font.family"] = [
 # ------------------------------------------------------------------
 class TrainerCNN:
     def __init__(
-        self, cfg: dict, model_config: dict = None, restart_training: bool = False
-    ):
+        self, cfg: dict, model_config: dict = None):
         # config
         self.cfg: dict = cfg
         self.model_config: dict = model_config
@@ -85,12 +94,18 @@ class TrainerCNN:
         self.image_size: int = self.cfg[ConfigKeys.DATA_SETTINGS][ConfigKeys.IMG_SIZE]
         self.batch_size: int = self.cfg[ConfigKeys.DATA_SETTINGS][ConfigKeys.BATCH_SIZE]
 
+        # train option
+        self.train_option: dict[str, any] = self.cfg[ConfigKeys.MODEL][ConfigKeys.TRAIN_OPTION]
+        self.transfer_learning: bool = self.train_option.get(ConfigKeys.TRANSFER_LEARNING, False)
+        self.restart_training: bool = self.train_option.get(ConfigKeys.RESTART_TRAIN, False)
+
         # get model
         # get model from previous training
-        if restart_training:
+        if self.restart_training or self.transfer_learning:
             checkpoint_model_name = (
                 Path(self.cfg[ConfigKeys.MODEL]["pretrained"]["path"])
-                / self.cfg[ConfigKeys.MODEL]["backbone"]
+                / self.cfg[ConfigKeys.MODEL]["pretrained"]["folder"]
+                / "model"
                 / self.cfg[ConfigKeys.MODEL]["pretrained"]["name"]
             )
             checkpoint = torch.load(checkpoint_model_name, map_location=self.device)
@@ -98,15 +113,25 @@ class TrainerCNN:
             if self.model_name == "custom":
                 self.model_config = checkpoint["custom_model"]
 
+            channels = len(checkpoint["model_config"]["class_to_idx"])
+
             self.model: nn.Module = get_model(
                 name=self.model_name,
-                num_classes=self.num_classes,
+                num_classes=channels, 
                 num_channels=self.num_channels,
                 img_size=self.image_size,
                 model_cfg=self.model_config,
             )
 
             self.model.load_state_dict(checkpoint["model_state"])
+
+            print(self.model.featuures)
+            print(self.model.classifier)
+
+            if self.transfer_learning and channels != self.num_channels:
+                last_layer: nn.Linear = self.model.classifier[-1]
+                self.model.classifier[-1] = nn.Linear(last_layer.in_features, self.num_channels)
+
             self.model.to(self.device)
 
         # get new model to train
@@ -134,12 +159,12 @@ class TrainerCNN:
         self.optimizer = self.optimizer_class.get_optimizer()
 
         # restart training with old optmizer
-        if restart_training:
+        if self.restart_training:
             self.optimizer.load_state_dict(checkpoint["optimizer_state"])
 
         # lr scheduler
         # get previous training optimizer
-        if restart_training:
+        if self.restart_training:
             self.scheduler.load_state_dict(checkpoint["scheduler_state"])
 
         # start new optimizer
@@ -187,7 +212,7 @@ class TrainerCNN:
         self.loss = nn.CrossEntropyLoss()
 
         # Best accuracy e loss
-        if restart_training:
+        if self.restart_training:
             self.best_acc: float = checkpoint["metrics"]["accuracy"]
             self.best_loss: float = checkpoint["metrics"]["loss"]
         else:
@@ -195,7 +220,7 @@ class TrainerCNN:
             self.best_loss: float = float("inf")
 
         # epoche
-        if restart_training:
+        if self.restart_training:
             self.start_epoch: int = checkpoint["epoch"]
         else:
             self.start_epoch: int = 0
@@ -237,6 +262,7 @@ class TrainerCNN:
 
         # batch di immagini di prova
         images_batch, _ = next(iter(self.train_dl))
+        images_batch = images_batch.to(self.device)
         img_grid = make_grid(images_batch, normalize=True)
         self.writer.add_image("Immagini di training", img_grid)
 
@@ -247,17 +273,13 @@ class TrainerCNN:
         self.training_engine.add_writer(self.writer)
 
     def loggingInfo(self):
-        ColoredPrint.blue("\nINIZIO LOGGING TRAINING\n" + "-" * 20)
+        ColoredPrint.blue('-' * 20 + "\nINIZIO LOGGING TRAINING\n")
 
         ColoredPrint.purple(
             f"Il training viene eseguto sul device: {self.device.upper()}."
         )
 
         ColoredPrint.purple(f"Il modello scelto è: {self.model_name}.")
-
-        ColoredPrint.purple(
-            f"Lo scheduler usato è: {self.scheduler_name} con i seguenti parametri {self.scheduler_kwargs}."
-        )
 
         ColoredPrint.purple(
             f"La grandezza dell'immagine è: {self.image_size}x{self.image_size}."
@@ -273,17 +295,21 @@ class TrainerCNN:
 
         ColoredPrint.purple(f"Il modello verrà addestrato su: {self.epochs} epoche.")
 
-        ColoredPrint.blue("\nFINE LOGGING TRAINING\n" + "-" * 20)
+        ColoredPrint.blue("\nFINE LOGGING TRAINING\n")
 
     def train(self) -> None:
-        ColoredPrint.purple("\nINIZIO LOOP DI TRAINING\n" + "-" * 20)
+        ColoredPrint.purple("\nINIZIO LOOP DI TRAINING\n")
 
         ColoredPrint.purple(
-            f"Il training è stato impostato per {self.epochs} epoche..."
+            f"Il training è stato impostato per {self.epochs} epoche."
         )
 
         for epoch in range(self.start_epoch, self.epochs):
             ColoredPrint.purple(f"\nEpoca {epoch+1} di {self.epochs}")
+            
+            current_lr = self.optimizer.param_groups[0]["lr"]
+
+            ColoredPrint.purple(f"Learning rate di {current_lr}")
 
             # Tempo di inizio epoca
             start_time: float = time.time()
@@ -298,19 +324,6 @@ class TrainerCNN:
 
             ColoredPrint.cyan("\nFINE ELABORAZIONE DEL MODELLO\n")
 
-            if not self.normal_scheduler and epoch >= self.warmup_scheduler_epochs:
-                self.scheduler_class: LR_scheduler = LR_scheduler(
-                    self.scheduler_name, self.optimizer, **self.scheduler_kwargs
-                )
-                self.scheduler, self.scheduler_type = (
-                    self.scheduler_class.get_scheduler()
-                )
-
-                self.normal_scheduler = True
-            else:
-                if self.scheduler_type == "epoch":
-                    self.scheduler.step()
-
             # Mostra loss e accuracy
             print(f"Train loss: {train_loss:.3f} | Train acc: {train_accuracy:.2f}%")
             print(f"Val loss: {val_loss:.3f} | Val acc: {val_accuracy:.2f}%")
@@ -321,8 +334,9 @@ class TrainerCNN:
                 self.best_acc = val_accuracy
                 self.save_model(val_accuracy, val_loss, epoch)
 
-            if val_loss < self.best_loss:
                 self.best_loss = val_loss
+                self.best_train_acc = train_accuracy
+                self.best_train_loss = train_loss
 
             # Valuta se stoppare l'addestramento
             self.early_stopping.calculateWhenStop(
@@ -337,6 +351,7 @@ class TrainerCNN:
             hours, remainder = divmod(epoch_duration, 3600)  # Ore e resto
             minutes, remainder = divmod(remainder, 60)  # Minuti e resto
             seconds = remainder  # I secondi possono essere decimali
+            # eliminazione dei decimali tramite conversione in intero
             epoch_duration = f"{int(hours)}h:{int(minutes)}m:{int(seconds)}s"
             ColoredPrint.blue(f"\nL'addestramento è durato {epoch_duration}.")
 
@@ -346,25 +361,56 @@ class TrainerCNN:
             self.writer.add_scalar("validation/loss", val_loss, epoch)
             self.writer.add_scalar("validation/accuracy", val_accuracy, epoch)
 
-            current_lr = self.optimizer.param_groups[0]["lr"]
             self.writer.add_scalar("Hyperparameters/learning_rate", current_lr, epoch)
 
-            print(current_lr)
-
-            self.save_training_info(
+            self.save_training_information(
                 val_accuracy,
                 val_loss,
                 train_accuracy,
                 train_loss,
-                self.file_name,
-                self.count_parameters(),
                 epoch,
                 epoch_duration,
                 current_lr,
-                self.main_save_path,
             )
 
             self.last_epoch = epoch + 1
+
+            # se il warmup scheduler ha terminato, inietta lo scheduler normale
+            if not self.normal_scheduler and epoch >= self.warmup_scheduler_epochs:
+                self.scheduler_class: LR_scheduler = LR_scheduler(
+                    self.scheduler_name, self.optimizer, **self.scheduler_kwargs
+                )
+                self.scheduler, self.scheduler_type = (
+                    self.scheduler_class.get_scheduler()
+                )
+
+                self.normal_scheduler = True
+            else:
+                if self.scheduler_type == "epoch":
+                    self.scheduler.step()
+
+
+            # istogramma dei pesi, dei bias e dei gradienti
+            for name, module in self.model.named_modules():
+            # Controlla se il modulo ha parametri (esclude ReLU, MaxPool, Flatten che non hanno pesi/bias)
+                if isinstance(module, (nn.Linear, nn.Conv2d, nn.BatchNorm2d)):
+                    # Ottieni il tipo di layer come stringa (es. linear oppure Conv2d)
+                    layer_type = type(module).__name__
+
+                    # Itera sui parametri per esempio weight e bias
+                    for param_name, param in module.named_parameters():
+                        # 'param_name' è il nome del parametro come 'weight' o 'bias'
+                        # 'name' è il nome del layer nel modello (es. 'features' o 'classifier')
+
+                        # Crea un nome del tipo: nome_blocco (conv oppurer FC) + nome_layer + nome_parametro
+                        tag_weights = f'{name}/{layer_type}/{param_name}'
+                        self.writer.add_histogram(tag_weights, param.data, global_step=epoch)
+
+                        # Se esistono dei gradienti fai il logging
+                        if param.grad is not None:
+                            tag_gradients = f'{name}/{layer_type}/gradients/{param_name}'
+                            self.writer.add_histogram(tag_gradients, param.grad.data, global_step=epoch)
+
 
             # calcola l'early stop in base all'accuratezza/loss
             if self.early_stopping.stop:
@@ -384,6 +430,12 @@ class TrainerCNN:
 
         self.writer.flush()
         self.writer.close()
+
+        self.save_training_general_info(
+            self.best_acc, self.best_loss, self.best_train_acc, self.best_train_loss
+        )
+
+        self.save_testing_model()
 
         ColoredPrint.purple("\nFINE LOOP DI TRAINING\n" + "-" * 20)
 
@@ -424,66 +476,96 @@ class TrainerCNN:
 
         ColoredPrint.green(f"\nIl modello: {self.file_name} è stato salvato.\n")
 
-    def save_training_info(
+    def save_training_information(
         self,
         val_accuracy: float,
         val_loss: float,
         train_accuracy: float,
         train_loss: float,
-        file_name: str,
-        num_parameters: int,
         epoch: int,
         epoch_duration: str,
         current_lr: float,
-        filepath: Path,
+    ):
+        trainingInfo = TrainingInfo(
+            file_name=self.file_name,
+            epoch=epoch,
+            epochs=self.epochs,
+            epoch_duration=epoch_duration,
+            current_lr=current_lr,
+            val_accuracy=val_accuracy,
+            val_loss=val_loss,
+            train_accuracy=train_accuracy,
+            train_loss=train_loss,
+        )
+        save_epoch_info(trainingInfo=trainingInfo, filepath=self.main_save_path)
+
+    def save_training_general_info(
+        self,
+        val_accuracy: float,
+        val_loss: float,
+        train_accuracy: float,
+        train_loss: float,
     ):
 
-        # Dati da salvare
-        data_to_save = {
-            "model": {
-                "model_name": self.model_name,
-                "model_save_namme": file_name,
-                "num_parameters": num_parameters,
-            },
-            "general_configurations": {
-                "num_channels": self.num_channels,
-                "image_size": self.image_size,
-                "epochs": self.epochs,
-                "batch_size": self.batch_size
-            },
-            "optimizer": {"name": self.optimizer_name, "learning_rate": current_lr},
-            "scheduler": {
-                "scheduler_name": self.scheduler_name,
-                "scheduler_kwargs": self.scheduler_kwargs,
-            },
-            "training_info": {
-                "epoch": f"{epoch+1}/{self.epochs}",
-                "epoch_duration": epoch_duration,
-            },
-            "model_valutation": {
-                "val": {"accuracy": val_accuracy, "loss": val_loss},
-                "train": {"accuracy": train_accuracy, "loss": train_loss},
-            },
-        }
+        generalTrainingInfo = GeneralTrainingInfo(
+            model_name=self.model_name,
+            file_name=self.file_name,
+            num_parameters=self.count_parameters(),
+            num_channels=self.num_channels,
+            image_size=self.image_size,
+            batch_size=self.batch_size,
+            last_epoch=self.last_epoch,
+            epochs=self.epochs,
+            val_accuracy=val_accuracy,
+            val_loss=val_loss,
+            train_accuracy=train_accuracy,
+            train_loss=train_loss,
+            optimizer_name=self.optimizer_name,
+            initial_lr=self.lr,
+            scheduler_name=self.scheduler_name,
+            scheduler_kwargs=self.scheduler_kwargs,
+            warmup_kwargs=(
+                {
+                    "epoch": self.warmup_scheduler_epochs,
+                    "lr": self.warmup_scheduler_lr,
+                    "step_size": self.warmup_scheduler_step_size,
+                }
+                if self.cfg[ConfigKeys.TRAIN][ConfigKeys.OPTIMIZER][ConfigKeys.WARMUP][
+                    ConfigKeys.USE_WARMUP
+                ]
+                else None
+            ),
+            early_stop_kwargs=(
+                self.cfg[ConfigKeys.TRAIN][ConfigKeys.EARLY_STOPPING][
+                    ConfigKeys.EARLY_STOPPING_KWARGS
+                ]
+                if self.cfg[ConfigKeys.TRAIN][ConfigKeys.EARLY_STOPPING][
+                    ConfigKeys.USE_EARLY_STOPPING
+                ]
+                else None
+            ),
+        )
 
-        # Se il file esiste, carica i dati esistenti
-        complete_path: Path = filepath / "training.json"
-        if complete_path.exists():
-            with complete_path.open("r") as f:
-                existing_data = json.load(f)
-        else:
-            existing_data = []
-
-        # Aggiungi i nuovi dati
-        existing_data.append(data_to_save)
-
-        # Salva tutto nel file (sovrascrive)
-        with complete_path.open("w") as f:
-            json.dump(existing_data, f, indent=4)
-
-        ColoredPrint.purple(f"Training info salvati.")
+        save_training_info(
+            trainingInfo=generalTrainingInfo, filepath=self.main_save_path
+        )
 
     def save_model_config(self):
         path = self.main_save_path / "model_config.json"
         with path.open("w") as f:
             json.dump(self.model_config, f, indent=4)
+
+    def save_testing_model(self):
+        path = Path("config.json")
+        with path.open("r") as f:
+            existing_data = json.load(f)
+
+        existing_data[ConfigKeys.MODEL][ConfigKeys.PRETRAINED][
+            ConfigKeys.NAME
+        ] = self.file_name
+        existing_data[ConfigKeys.MODEL][ConfigKeys.PRETRAINED][
+            ConfigKeys.FOLDER
+        ] = self.main_save_path.name
+
+        with path.open("w") as f:
+            json.dump(existing_data, f, indent=4)
