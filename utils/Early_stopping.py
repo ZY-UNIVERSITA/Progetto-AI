@@ -17,7 +17,7 @@ class EarlyStopping:
         self.epochs: int = self.cfg[ConfigKeys.TRAIN][ConfigKeys.EPOCHS]
 
         # Early stop
-        early_stopping_cfg: dict = self.cfg[ConfigKeys.TRAIN][ConfigKeys.EARLY_STOPPING]
+        early_stopping_cfg: dict = self.cfg[ConfigKeys.TRAIN][ConfigKeys.EARLY_STOPPING][ConfigKeys.EARLY_STOPPING_KWARGS]
 
         self.first_epoch: int = early_stopping_cfg[ConfigKeys.FIRST_EPOCH]
         # numero di epoche passate tra 2 early_stop

@@ -32,6 +32,14 @@ class ConfigKeys(str, Enum):
     # Model settings
     MODEL = "model"
     MODEL_NAME = "backbone"
+    PRETRAINED: str = "pretrained"
+    NAME: str = "name"
+    FOLDER: str = "folder"
+
+    # Train option
+    TRAIN_OPTION: str = "train_option"
+    TRANSFER_LEARNING: str = "transfer_learning"
+    RESTART_TRAIN: str = "restart_train"
 
     # Training settings
     EPOCHS = "epochs"
@@ -47,6 +55,8 @@ class ConfigKeys(str, Enum):
     CHECKPOINT_DIR = "dir"
 
     # Early stopping settings
+    USE_EARLY_STOPPING: str = "use_early_stopping"
+    EARLY_STOPPING_KWARGS: str = "early_stopping_kwargs"
     EARLY_STOPPING = "early_stopping"
     FIRST_EPOCH = "first_epoch"
     EVALUATION_BETWEEN_EPOCH = "evaluation_between_epoch"
