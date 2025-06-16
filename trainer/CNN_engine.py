@@ -42,6 +42,8 @@ class CNNEngine:
         self.device = device
         self.classes = classes
 
+        self.best_loss = float("+inf")
+
     def add_writer(self, writer):
         self.writer: SummaryWriter = writer
 
@@ -51,6 +53,7 @@ class CNNEngine:
         correct: int = 0
         total: int = 0
 
+        mode: str = tqdm_desc
         train: bool = tqdm_desc == TRAIN
 
         # Training mode:
@@ -120,6 +123,11 @@ class CNNEngine:
             real_y = real_y + labels.tolist()
             pred_y = pred_y + preds.tolist()
 
+        
+        # calcola la loss e l'accuracy
+        avg_loss: float = total_loss / total
+        avg_acc: float = 100 * correct / total
+
         # mt = Metrics(self.classes, real_y, pred_y)
 
         # mt.report()
@@ -128,7 +136,8 @@ class CNNEngine:
 
         # matrix = mt.confusion_matrix
 
-        if not train:
+        if mode == VAL and avg_loss < self.best_loss:
+            self.best_loss = avg_loss
             # trasforma gli indici in stringhe tramite il dizionario
             index_to_label = {v: k for k, v in self.classes.items()}
 
@@ -139,7 +148,7 @@ class CNNEngine:
             cm = confusion_matrix(real_y, pred_y, labels=labels)
 
             # Crea una heatmap con le label 
-            fig, ax = plt.subplots(figsize=(8, 6))
+            fig, ax = plt.subplots(figsize=(16, 12))
             sns.heatmap(
                 cm,
                 annot=True,
@@ -166,8 +175,5 @@ class CNNEngine:
 
             plt.close()
 
-        # calcola la loss e l'accuracy
-        avg_loss: float = total_loss / total
-        avg_acc: float = 100 * correct / total
 
         return avg_loss, avg_acc
