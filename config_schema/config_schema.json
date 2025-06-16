@@ -1,0 +1,452 @@
+{
+    "type": "object",
+    "required": [
+        "general_settings",
+        "data_settings",
+        "data_augmentation",
+        "model",
+        "train",
+        "checkpoint"
+    ],
+    "properties": {
+        "general_settings": {
+            "type": "object",
+            "properties": {
+                "seed": {
+                    "type": "integer"
+                },
+                "device": {
+                    "type": "string",
+                    "enum": [
+                        "cpu",
+                        "cuda"
+                    ]
+                },
+                "crop": {
+                    "type": "boolean"
+                },
+                "split": {
+                    "type": "boolean"
+                },
+                "data_aug": {
+                    "type": "boolean"
+                }
+            },
+            "required": [
+                "seed",
+                "device",
+                "crop",
+                "split",
+                "data_aug"
+            ]
+        },
+        "data_settings": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "CNN"
+                    ]
+                },
+                "directory": {
+                    "type": "object",
+                    "properties": {
+                        "general_dir": {
+                            "type": "string"
+                        },
+                        "input_dir": {
+                            "type": "string"
+                        },
+                        "output_dir": {
+                            "type": "string"
+                        },
+                        "dataset_dir": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "general_dir",
+                        "input_dir",
+                        "output_dir",
+                        "dataset_dir"
+                    ]
+                },
+                "dataset": {
+                    "type": "object",
+                    "properties": {
+                        "train_dir": {
+                            "type": "string"
+                        },
+                        "train_dir_aug": {
+                            "type": "string"
+                        },
+                        "val_dir": {
+                            "type": "string"
+                        },
+                        "test_dir": {
+                            "type": "string"
+                        },
+                        "split_value": {
+                            "type": "object",
+                            "properties": {
+                                "train": {
+                                    "type": "number",
+                                    "minimum": 0,
+                                    "maximum": 1
+                                },
+                                "val": {
+                                    "type": "number",
+                                    "minimum": 0,
+                                    "maximum": 1
+                                },
+                                "test": {
+                                    "type": "number",
+                                    "minimum": 0,
+                                    "maximum": 1
+                                }
+                            },
+                            "required": [
+                                "train",
+                                "val",
+                                "test"
+                            ]
+                        }
+                    },
+                    "required": [
+                        "train_dir",
+                        "val_dir",
+                        "test_dir",
+                        "split_value"
+                    ]
+                },
+                "img_size": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "batch_size": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "num_workers": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "grey": {
+                    "type": "boolean"
+                },
+                "num_channels": {
+                    "type": "integer",
+                    "minimum": 1
+                }
+            },
+            "required": [
+                "type",
+                "directory",
+                "dataset",
+                "img_size",
+                "batch_size",
+                "num_workers",
+                "grey",
+                "num_channels"
+            ]
+        },
+        "data_augmentation": {
+            "type": "object",
+            "properties": {
+                "copies": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "random_affine": {
+                    "type": "boolean"
+                },
+                "random_perspective": {
+                    "type": "boolean"
+                },
+                "random_color_jitter": {
+                    "type": "boolean"
+                },
+                "random_sharpness": {
+                    "type": "boolean"
+                },
+                "random_apply": {
+                    "type": "boolean"
+                },
+                "random_erasing": {
+                    "type": "boolean"
+                },
+                "random_elastic": {
+                    "type": "boolean"
+                },
+                "random_contrast": {
+                    "type": "boolean"
+                },
+                "random_equalize": {
+                    "type": "boolean"
+                }
+            },
+            "required": [
+                "copies",
+                "random_affine",
+                "random_perspective",
+                "random_color_jitter",
+                "random_sharpness",
+                "random_apply",
+                "random_erasing",
+                "random_elastic",
+                "random_contrast",
+                "random_equalize"
+            ]
+        },
+        "model": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "backbone": {
+                    "type": "string"
+                },
+                "pretrained": {
+                    "type": "object",
+                    "properties": {
+                        "folder": {
+                            "type": "string"
+                        },
+                        "name": {
+                            "type": "string"
+                        },
+                        "path": {
+                            "type": "string"
+                        },
+                        "freeze_backbone": {
+                            "type": "boolean"
+                        }
+                    },
+                    "required": [
+                        "folder",
+                        "name",
+                        "path",
+                        "freeze_backbone"
+                    ]
+                },
+                "train_option": {
+                    "type": "object",
+                    "properties": {
+                        "transfer_learning": {
+                            "type": "boolean"
+                        },
+                        "restart_train": {
+                            "type": "boolean"
+                        }
+                    },
+                    "required": [
+                        "transfer_learning",
+                        "restart_train"
+                    ]
+                }
+            },
+            "required": [
+                "name",
+                "backbone",
+                "pretrained",
+                "train_option"
+            ]
+        },
+        "train": {
+            "type": "object",
+            "properties": {
+                "epochs": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "optimizer": {
+                    "type": "object",
+                    "properties": {
+                        "type": {
+                            "type": "string",
+                            "enum": [
+                                "Adam"
+                            ]
+                        },
+                        "optimizer_args": {
+                            "type": "object",
+                            "properties": {
+                                "lr": {
+                                    "type": "number",
+                                    "minimum": 0
+                                },
+                                "weight_decay": {
+                                    "type": "number",
+                                    "minimum": 0
+                                }
+                            },
+                            "required": [
+                                "lr",
+                                "weight_decay"
+                            ]
+                        },
+                        "warmup": {
+                            "type": "object",
+                            "properties": {
+                                "use_warmup": {
+                                    "type": "boolean"
+                                },
+                                "epochs": {
+                                    "type": "integer",
+                                    "minimum": 1
+                                },
+                                "lr": {
+                                    "type": "number",
+                                    "minimum": 0
+                                },
+                                "step_size": {
+                                    "type": "integer",
+                                    "minimum": 1
+                                }
+                            },
+                            "required": [
+                                "use_warmup"
+                            ],
+                            "dependencies": {
+                                "use_warmup": {
+                                    "required": [
+                                        "epochs",
+                                        "lr",
+                                        "step_size"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "required": [
+                        "type",
+                        "optimizer_args",
+                        "warmup"
+                    ]
+                },
+                "scheduler": {
+                    "type": "object",
+                    "properties": {
+                        "type": {
+                            "type": "string",
+                            "enum": [
+                                "StepLR"
+                            ]
+                        },
+                        "use_scheduler": {
+                            "type": "boolean"
+                        },
+                        "scheduler_args": {
+                            "type": "object",
+                            "properties": {
+                                "step_size": {
+                                    "type": "integer",
+                                    "minimum": 1
+                                },
+                                "gamma": {
+                                    "type": "number",
+                                    "minimum": 0
+                                }
+                            },
+                            "required": [
+                                "step_size",
+                                "gamma"
+                            ]
+                        }
+                    },
+                    "required": [
+                        "type",
+                        "use_scheduler"
+                    ],
+                    "dependencies": {
+                        "use_scheduler": {
+                            "required": [
+                                "scheduler_args"
+                            ]
+                        }
+                    }
+                },
+                "early_stopping": {
+                    "type": "object",
+                    "properties": {
+                        "use_early_stopping": {
+                            "type": "boolean"
+                        },
+                        "early_stopping_kwargs": {
+                            "type": "object",
+                            "properties": {
+                                "first_epoch": {
+                                    "type": "integer",
+                                    "minimum": 1
+                                },
+                                "evaluation_between_epoch": {
+                                    "type": "integer",
+                                    "minimum": 1
+                                },
+                                "patience": {
+                                    "type": "integer",
+                                    "minimum": 1
+                                },
+                                "improvement_rate": {
+                                    "type": "number",
+                                    "minimum": 0
+                                },
+                                "monitor": {
+                                    "type": "string",
+                                    "enum": [
+                                        "val_loss",
+                                        "val_accuracy"        
+                                    ]
+                                },
+                                "mode": {
+                                    "type": "string",
+                                    "enum": [
+                                        "min",
+                                        "max"
+                                    ]
+                                }
+                            },
+                            "required": [
+                                "first_epoch",
+                                "evaluation_between_epoch",
+                                "patience",
+                                "improvement_rate",
+                                "monitor",
+                                "mode"
+                            ]
+                        }
+                    },
+                    "required": [
+                        "use_early_stopping"
+                    ],
+                    "dependencies": {
+                        "use_early_stopping": {
+                            "required": [
+                                "early_stopping_kwargs"
+                            ]
+                        }
+                    }
+                }
+            },
+            "required": [
+                "epochs",
+                "optimizer",
+                "scheduler",
+                "early_stopping"
+            ]
+        },
+        "checkpoint": {
+            "type": "object",
+            "properties": {
+                "dir": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "dir"
+            ]
+        }
+    }
+}

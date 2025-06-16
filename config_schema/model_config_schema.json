@@ -1,0 +1,168 @@
+{
+    "type": "object",
+    "required": [
+        "convolutional_layer",
+        "fully_connected_layer"
+    ],
+    "additionalProperties": false,
+    "properties": {
+        "convolutional_layer": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "layer_type": {
+                            "type": "string",
+                            "enum": [
+                                "conv_2d",
+                                "batch_norm_2d",
+                                "relu",
+                                "max_pool_2d"
+                            ]
+                        },
+                        "output_channels": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "kernel_size": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    },
+                    "required": [
+                        "layer_type"
+                    ],
+                    "dependencies": {
+                        "layer_type": {
+                            "oneOf": [
+                                {
+                                    "properties": {
+                                        "layer_type": {
+                                            "const": "conv_2d"
+                                        },
+                                        "output_channels": {
+                                            "type": "integer",
+                                            "minimum": 1
+                                        }
+                                    },
+                                    "required": [
+                                        "output_channels"
+                                    ]
+                                },
+                                {
+                                    "properties": {
+                                        "layer_type": {
+                                            "const": "max_pool_2d"
+                                        },
+                                        "kernel_size": {
+                                            "type": "integer",
+                                            "minimum": 1
+                                        }
+                                    },
+                                    "required": [
+                                        "kernel_size"
+                                    ]
+                                },
+                                {
+                                    "properties": {
+                                        "layer_type": {
+                                            "enum": [
+                                                "batch_norm_2d",
+                                                "relu"
+                                            ]
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "fully_connected_layer": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "layer_type": {
+                            "type": "string",
+                            "enum": [
+                                "adaptive_avg_pool_2d",
+                                "flatten",
+                                "dropout",
+                                "linear",
+                                "relu"
+                            ]
+                        },
+                        "output_channels": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "dropout": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1
+                        }
+                    },
+                    "required": [
+                        "layer_type"
+                    ],
+                    "dependencies": {
+                        "layer_type": {
+                            "oneOf": [
+                                {
+                                    "properties": {
+                                        "layer_type": {
+                                            "const": "linear"
+                                        },
+                                        "output_channels": {
+                                            "type": "integer",
+                                            "minimum": 1
+                                        }
+                                    },
+                                    "required": [
+                                        "output_channels"
+                                    ]
+                                },
+                                {
+                                    "properties": {
+                                        "layer_type": {
+                                            "const": "dropout"
+                                        },
+                                        "dropout": {
+                                            "type": "number",
+                                            "minimum": 0,
+                                            "maximum": 1
+                                        }
+                                    },
+                                    "required": [
+                                        "dropout"
+                                    ]
+                                },
+                                {
+                                    "properties": {
+                                        "layer_type": {
+                                            "enum": [
+                                                "adaptive_avg_pool_2d",
+                                                "flatten",
+                                                "relu"
+                                            ]
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
