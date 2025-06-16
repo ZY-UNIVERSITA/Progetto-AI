@@ -12,6 +12,8 @@ from utils import ColoredPrint, ConfigKeys
 
 from torch.utils.data import DataLoader as DL
 
+import json
+
 # ------------------------------------------------------------------
 # PARAMETRI DA PERSONALIZZARE
 # ------------------------------------------------------------------
@@ -58,6 +60,9 @@ MODEL_NAME: str = "model_name"
 
 MODEL_STATE: str = "model_state"
 
+FOLDER: str = "folder"
+
+CUSTOM_MODEL: str = "custom_model"
 
 # ------------------------------------------------------------------
 # CLASSE DI INFERENCE CNN
@@ -80,7 +85,8 @@ class TesterCNN:
         # modello salvato
         self.checkpoint_model_name = (
             Path(self.cfg[MODEL][PRETRAINED][PATH])
-            / self.cfg[MODEL][BACKBONE]
+            / self.cfg[MODEL][PRETRAINED][FOLDER]
+            / MODEL
             / self.cfg[MODEL][PRETRAINED][NAME]
         )
         self.checkpoint_model = torch.load(
@@ -88,7 +94,8 @@ class TesterCNN:
         )
 
         # num classes
-        self.num_classes: int = len(self.checkpoint_model[MODEL_CONFIG][CLASS_TO_IDX])
+        self.classes: dict[str, int] = self.checkpoint_model[MODEL_CONFIG][CLASS_TO_IDX]
+        self.num_classes: int = len(self.classes)
 
         # model name, channels, img_size and num_params
         # self.model_name: str = self.checkpoint_model[MODEL_CONFIG][MODEL_NAME] if self.checkpoint_model[MODEL_CONFIG][MODEL_NAME] else self.cfg[MODEL][BACKBONE]
@@ -96,6 +103,7 @@ class TesterCNN:
         self.num_channels: int = self.checkpoint_model[MODEL_CONFIG][NUM_CHANNELS]
         self.image_size: int = self.checkpoint_model[MODEL_CONFIG][IMG_SIZE]
         self.num_params: int = self.checkpoint_model[MODEL_CONFIG][NUM_PARAMS]
+        self.model_config = self.checkpoint_model[CUSTOM_MODEL]
 
         # modello CNN
         self.model: nn.Module = get_model(
@@ -103,6 +111,7 @@ class TesterCNN:
             num_classes=self.num_classes,
             num_channels=self.num_channels,
             img_size=self.image_size,
+            model_cfg=self.model_config
         )
 
         # load weight
@@ -119,17 +128,33 @@ class TesterCNN:
         self.epochs: int = self.cfg[TRAIN][EPOCHS]
 
         # training engine
-        self.training_engine = CNNEngine(self.model, self.loss, None, self.device)
+        self.training_engine = CNNEngine(self.model, self.loss, None, None, None, self.device, self.classes)
 
         # Save model
         self.checkpoint = self.cfg[CHECKPOINT][CHECKPOINT_DIR]
 
     def inference(self):
         ColoredPrint.green("\nINIZIO LOOP DI INFERENZA\n" + "-" * 20)
-
+    
         test_loss, test_accuracy = self.training_engine.exec_epoch(self.test_dl, TEST)
 
         # Mostra loss e accuracy
         print(f"Test loss: {test_loss:.3f} | Test acc: {test_accuracy:.2f}%")
 
+        self.save_test_info(test_loss, test_accuracy)
+
         ColoredPrint.green("\nFINE LOOP DI INFERENZA\n" + "-" * 20)
+
+    def save_test_info(self, loss: float, accuracy: float) -> None:
+        path: Path = Path(self.cfg[MODEL][PRETRAINED][PATH]) / self.cfg[MODEL][PRETRAINED][FOLDER] / "general_info_training.json"
+
+        with path.open("r") as f:
+            existing_data = json.load(f)
+
+        existing_data["model_evaluation"]["test"] = {
+            "accuracy": accuracy,
+            "loss": loss
+        }
+
+        with path.open("w") as f:
+            json.dump(existing_data, f, indent=4)
