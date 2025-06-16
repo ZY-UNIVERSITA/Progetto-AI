@@ -79,8 +79,6 @@ class CNN_creator():
 
                 layers_list.append(layer_constructor)
 
-        print(layers_list)
-
         return nn.Sequential(*layers_list)
 
     def conv_2d(self, layer: dict[str, any]) -> nn.Sequential:
