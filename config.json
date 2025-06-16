@@ -2,9 +2,9 @@
   "general_settings": {
     "seed": 42,
     "device": "cuda",
-    "crop": true,
-    "split": true,
-    "data_aug": true
+    "crop": false,
+    "split": false,
+    "data_aug": false
   },
   "data_settings": {
     "type": "CNN",
@@ -32,45 +32,43 @@
     "num_channels": 1
   },
   "data_augmentation": {
-    "copies": 1,
-    "random_affine": false,
-    "random_perspective": false,
-    "random_color_jitter": false,
-    "random_sharpness": false,
-    "random_apply": false,
-    "random_erasing": false,
-    "random_elastic": false,
-    "random_contrast": false,
-    "random_equalize": false
+    "copies": 10,
+    "random_affine": true,
+    "random_perspective": true,
+    "random_color_jitter": true,
+    "random_sharpness": true,
+    "random_apply": true,
+    "random_erasing": true,
+    "random_elastic": true,
+    "random_contrast": true,
+    "random_equalize": true
   },
   "model": {
     "name": "custom_cnn",
     "backbone": "custom",
     "pretrained": {
-      "name": "CNN_v0_20250602-211752.pth",
-      "path": "checkpoints/",
+      "folder": "custom_20250615_120208",
+      "name": "custom_20250615-132623.pth",
+      "path": "runs/",
       "freeze_backbone": true
+    },
+    "train_option": {
+      "transfer_learning": true,
+      "restart_train": false
     }
   },
-  "loss": {
-    "type": "cross_entropy"
-  },
-  "metrics": [
-    "accuracy",
-    "f1"
-  ],
   "train": {
     "epochs": 50,
     "optimizer": {
       "type": "Adam",
       "optimizer_args": {
-        "lr": 1e-5,
+        "lr": 1e-6,
         "weight_decay": 0
       },
       "warmup": {
         "use_warmup": true,
         "epochs": 5,
-        "lr": 1e-3,
+        "lr": 1e-5,
         "step_size": 1
       }
     },
@@ -84,20 +82,17 @@
     },
     "early_stopping": {
       "use_early_stopping": true,
-      "first_epoch": 10,
-      "evaluation_between_epoch": 5,
-      "patience": 10,
-      "improvement_rate": 0.05,
-      "monitor": "val_loss",
-      "mode": "min"
+      "early_stopping_kwargs": {
+        "first_epoch": 10,
+        "evaluation_between_epoch": 5,
+        "patience": 10,
+        "improvement_rate": 0.05,
+        "monitor": "val_loss",
+        "mode": "min"
+      }
     }
   },
   "checkpoint": {
-    "dir": "runs/",
-    "save_best_only": true,
-    "keep_top": 3
-  },
-  "logging": {
-    "tensorboard": true
+    "dir": "runs/"
   }
 }
