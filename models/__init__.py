@@ -1,9 +1,8 @@
-from .CNN import CNN_v0, CNN_v1, CNN_v3, model_creator
+import torch.nn as nn
+from .CNN import CNN_v0, model_creator
 
 MODEL_REPOSITORY = {
     "CNN_v0": CNN_v0,
-    "CNN_v1": CNN_v1,
-    "CNN_v3": CNN_v3,
     "custom": model_creator.CNN_creator,
 }
 
@@ -16,7 +15,7 @@ def get_model(
     num_channels: int = 1,
     img_size: int = 64,
     model_cfg: dict = None,
-):
+) -> nn.Module:
     if name not in MODEL_REPOSITORY:
         raise ValueError(f"Il modello: '{name}' non è presente nella repository.")
 
