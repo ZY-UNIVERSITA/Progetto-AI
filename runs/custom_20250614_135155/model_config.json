@@ -1,0 +1,38 @@
+{
+    "convolutional_layer": [
+        [
+            {
+                "layer_type": "conv_2d",
+                "output_channels": 16
+            },
+            {
+                "layer_type": "relu"
+            },
+            {
+                "layer_type": "max_pool_2d",
+                "kernel_size": 2
+            }
+        ]
+    ],
+    "fully_connected_layer": [
+        [
+            {
+                "layer_type": "flatten"
+            }
+        ],
+        [
+            {
+                "layer_type": "linear",
+                "output_channels": 128
+            },
+            {
+                "layer_type": "relu"
+            }
+        ],
+        [
+            {
+                "layer_type": "linear"
+            }
+        ]
+    ]
+}

@@ -1,0 +1,55 @@
+{
+    "model": {
+        "model_name": "custom",
+        "model_save_namme": "custom_20250614-200932.pth",
+        "num_parameters": 35710
+    },
+    "general_configurations": {
+        "num_channels": 1,
+        "image_size": 64,
+        "epochs": 50,
+        "batch_size": 32
+    },
+    "training_info": {
+        "last_epoch": 24,
+        "total_epoch": 50
+    },
+    "model_evaluation": {
+        "val": {
+            "accuracy": 92.2466960352423,
+            "loss": 0.3157928630644004
+        },
+        "train": {
+            "accuracy": 79.62567516643638,
+            "loss": 0.580600794072038
+        },
+        "test": {
+            "accuracy": 91.33448873483536,
+            "loss": 0.31910438743941294
+        }
+    },
+    "optimizer": {
+        "name": "Adam",
+        "initial_lr": 1e-05
+    },
+    "warmup": {
+        "epoch": 5,
+        "lr": 0.0005,
+        "step_size": 1
+    },
+    "scheduler": {
+        "scheduler_name": "StepLR",
+        "scheduler_kwargs": {
+            "step_size": 10,
+            "gamma": 0.1
+        }
+    },
+    "use_early_stopping": {
+        "first_epoch": 10,
+        "evaluation_between_epoch": 3,
+        "patience": 5,
+        "improvement_rate": 0.05,
+        "monitor": "val_loss",
+        "mode": "min"
+    }
+}
