@@ -6,10 +6,19 @@
                 "output_channels": 32
             },
             {
+                "layer_type": "batch_norm_2d"
+            },
+            {
+                "layer_type": "relu"
+            },
+            {
                 "layer_type": "conv_2d",
                 "output_channels": 32
             },
             {
+                "layer_type": "batch_norm_2d"
+            },
+            {
                 "layer_type": "relu"
             },
             {
@@ -23,8 +32,17 @@
                 "output_channels": 64
             },
             {
+                "layer_type": "batch_norm_2d"
+            },
+            {
+                "layer_type": "relu"
+            },
+            {
                 "layer_type": "conv_2d",
                 "output_channels": 64
+            },
+            {
+                "layer_type": "batch_norm_2d"
             },
             {
                 "layer_type": "relu"
@@ -36,18 +54,33 @@
         ],
         [
             {
-               "layer_type": "conv_2d",
-               "output_channels": 128 
+                "layer_type": "conv_2d",
+                "output_channels": 128
+            },
+            {
+                "layer_type": "batch_norm_2d"
             },
             {
                 "layer_type": "relu"
             },
             {
-                "layer_type": "adaptive_avg_pool_2d"
+                "layer_type": "conv_2d",
+                "output_channels": 128
+            },
+            {
+                "layer_type": "batch_norm_2d"
+            },
+            {
+                "layer_type": "relu"
             }
         ]
     ],
     "fully_connected_layer": [
+        [
+            {
+                "layer_type": "adaptive_avg_pool_2d"
+            }
+        ],
         [
             {
                 "layer_type": "flatten"
@@ -55,11 +88,19 @@
         ],
         [
             {
+                "layer_type": "dropout",
+                "dropout": 0.3
+            },
+            {
                 "layer_type": "linear",
-                "output_channels": 256
+                "output_channels": 128
             },
             {
                 "layer_type": "relu"
+            },
+            {
+                "layer_type": "dropout",
+                "dropout": 0.3
             }
         ],
         [
