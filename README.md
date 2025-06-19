@@ -22,3 +22,8 @@
    ```bash
    pip install -r requirements.txt
    ```
+
+5. Usare tensorboard:
+   ```bash
+   tensorboard --logdir "./runs/"
+   ```
