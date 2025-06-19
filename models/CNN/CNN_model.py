@@ -2,22 +2,6 @@ import torch
 import torch.nn as nn
 from typing import List, Dict, Any, Callable
 
-CONV_LAYER: str = "convolutional_layer"
-FC: str = "fully_connected_layer"
-LAYER_TYPE: str = "layer_type"
-OUTPUT_CHANNELS: str = "output_channels"
-
-# conv2d
-KERNEL_SIZE: str = "kernel_size"
-STRIDE: str = "stride"
-PADDING: str = "padding"
-
-# relu
-INPLACE: str = "inplace"
-
-DROPOUT: str = "dropout"
-
-
 class FlexibleCNNModel(nn.Module):
     """
     Una CNN la cui architettura è definita strato per strato
