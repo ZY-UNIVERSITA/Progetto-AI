@@ -88,7 +88,7 @@ class TrainerCNN:
         self.num_classes: int = len(self.class_to_idx)
 
         # model name, channels, img_size and
-        self.model_name: str = self.cfg[ConfigKeys.MODEL][ConfigKeys.MODEL_NAME]
+        self.model_name: str = self.cfg[ConfigKeys.MODEL][ConfigKeys.BACKBONE]
         self.num_channels: int = self.cfg[ConfigKeys.DATA_SETTINGS][
             ConfigKeys.NUM_CHANNELS
         ]

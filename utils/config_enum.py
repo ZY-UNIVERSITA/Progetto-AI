@@ -31,7 +31,6 @@ class ConfigKeys(str, Enum):
 
     # Model settings
     MODEL = "model"
-    MODEL_NAME = "backbone"
     PRETRAINED: str = "pretrained"
     NAME: str = "name"
     FOLDER: str = "folder"
