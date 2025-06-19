@@ -1,6 +1,5 @@
-import torch
 import torch.nn as nn
-from typing import Tuple, Dict, Any, Callable
+from typing import Dict, Any, Callable
 
 from .CNN_model import FlexibleCNNModel
 
@@ -20,7 +19,7 @@ INPLACE: str = "inplace"
 DROPOUT: str = "dropout"
 
 
-class CNN_creator():
+class CNN_creator:
     """
     Una CNN la cui architettura è definita strato per strato
     tramite una lista di configurazione. Offre il massimo controllo.

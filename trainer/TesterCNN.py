@@ -8,61 +8,11 @@ from pathlib import Path
 
 from models import get_model
 
-from utils import ColoredPrint, ConfigKeys
+from utils import ColoredPrint, ConfigKeys, save_test_info as sti
 
 from torch.utils.data import DataLoader as DL
 
 import json
-
-# ------------------------------------------------------------------
-# PARAMETRI DA PERSONALIZZARE
-# ------------------------------------------------------------------
-GENERAL_SETTINGS: str = "general_settings"
-DEVICE: str = "device"
-CUDA: str = "cuda"
-CPU: str = "cpu"
-
-DATA_SETTINGS: str = "data_settings"
-DIRECTORY: str = "directory"
-GENERAL_DIR: str = "general_dir"
-DATASET_DIR: str = "dataset_dir"
-
-DATASET: str = "dataset"
-TRAIN: str = "train"
-TRAIN_DIR: str = "train_dir_aug"
-VAL: str = "val"
-VAL_DIR: str = "val_dir"
-TEST: str = "test"
-TEST_DIR: str = "test_dir"
-
-IMG_SIZE: str = "img_size"
-BATCH_SIZE: str = "batch_size"
-NUM_WORKERS: str = "num_workers"
-NUM_CHANNELS: str = "num_channels"
-
-MODEL: str = "model"
-BACKBONE: str = "backbone"
-PRETRAINED: str = "pretrained"
-PATH: str = "path"
-NAME: str = "name"
-
-EPOCHS: str = "epochs"
-OPTIMIZER: str = "optimizer"
-LR: str = "lr"
-
-CHECKPOINT: str = "checkpoint"
-CHECKPOINT_DIR: str = "dir"
-
-MODEL_CONFIG: str = "model_config"
-CLASS_TO_IDX: str = "class_to_idx"
-NUM_PARAMS: str = "num_params"
-MODEL_NAME: str = "model_name"
-
-MODEL_STATE: str = "model_state"
-
-FOLDER: str = "folder"
-
-CUSTOM_MODEL: str = "custom_model"
 
 # ------------------------------------------------------------------
 # CLASSE DI INFERENCE CNN
@@ -73,10 +23,10 @@ class TesterCNN:
         self.cfg: dict = cfg
 
         # cuda
-        if self.cfg[GENERAL_SETTINGS][DEVICE] == CUDA and torch.cuda.is_available():
-            self.device: str = CUDA
+        if self.cfg[ConfigKeys.GENERAL_SETTINGS][ConfigKeys.DEVICE] == ConfigKeys.CUDA and torch.cuda.is_available():
+            self.device: str = ConfigKeys.CUDA
         else:
-            self.device: str = CPU
+            self.device: str = ConfigKeys.CPU
 
         # data loader
         self.dataloader = DataLoader(self.cfg).createDatasetTest()
@@ -84,26 +34,25 @@ class TesterCNN:
 
         # modello salvato
         self.checkpoint_model_name = (
-            Path(self.cfg[MODEL][PRETRAINED][PATH])
-            / self.cfg[MODEL][PRETRAINED][FOLDER]
-            / MODEL
-            / self.cfg[MODEL][PRETRAINED][NAME]
+            Path(self.cfg[ConfigKeys.MODEL][ConfigKeys.PRETRAINED][ConfigKeys.PATH])
+            / self.cfg[ConfigKeys.MODEL][ConfigKeys.PRETRAINED][ConfigKeys.FOLDER]
+            / ConfigKeys.MODEL
+            / self.cfg[ConfigKeys.MODEL][ConfigKeys.PRETRAINED][ConfigKeys.NAME]
         )
         self.checkpoint_model = torch.load(
             self.checkpoint_model_name, map_location=self.device
         )
 
         # num classes
-        self.classes: dict[str, int] = self.checkpoint_model[MODEL_CONFIG][CLASS_TO_IDX]
+        self.classes: dict[str, int] = self.checkpoint_model[ConfigKeys.MODEL_CONFIG][ConfigKeys.CLASS_TO_IDX]
         self.num_classes: int = len(self.classes)
 
         # model name, channels, img_size and num_params
-        # self.model_name: str = self.checkpoint_model[MODEL_CONFIG][MODEL_NAME] if self.checkpoint_model[MODEL_CONFIG][MODEL_NAME] else self.cfg[MODEL][BACKBONE]
-        self.model_name: str = self.cfg[MODEL][BACKBONE]
-        self.num_channels: int = self.checkpoint_model[MODEL_CONFIG][NUM_CHANNELS]
-        self.image_size: int = self.checkpoint_model[MODEL_CONFIG][IMG_SIZE]
-        self.num_params: int = self.checkpoint_model[MODEL_CONFIG][NUM_PARAMS]
-        self.model_config = self.checkpoint_model[CUSTOM_MODEL]
+        self.model_name: str = self.cfg[ConfigKeys.MODEL][ConfigKeys.BACKBONE]
+        self.num_channels: int = self.checkpoint_model[ConfigKeys.MODEL_CONFIG][ConfigKeys.NUM_CHANNELS]
+        self.image_size: int = self.checkpoint_model[ConfigKeys.MODEL_CONFIG][ConfigKeys.IMG_SIZE]
+        self.num_params: int = self.checkpoint_model[ConfigKeys.MODEL_CONFIG][ConfigKeys.NUM_PARAMS]
+        self.model_config = self.checkpoint_model[ConfigKeys.CUSTOM_MODEL]
 
         # modello CNN
         self.model: nn.Module = get_model(
@@ -111,11 +60,11 @@ class TesterCNN:
             num_classes=self.num_classes,
             num_channels=self.num_channels,
             img_size=self.image_size,
-            model_cfg=self.model_config
+            model_cfg=self.model_config,
         )
 
         # load weight
-        self.model.load_state_dict(self.checkpoint_model[MODEL_STATE])
+        self.model.load_state_dict(self.checkpoint_model[ConfigKeys.MODEL_STATE])
         self.model.to(self.device).eval()
 
         # loss function
@@ -125,18 +74,20 @@ class TesterCNN:
         self.best_acc: int = 0
 
         # epoche
-        self.epochs: int = self.cfg[TRAIN][EPOCHS]
+        self.epochs: int = self.cfg[ConfigKeys.TRAIN][ConfigKeys.EPOCHS]
 
         # training engine
-        self.training_engine = CNNEngine(self.model, self.loss, None, None, None, self.device, self.classes)
+        self.training_engine = CNNEngine(
+            self.model, self.loss, None, None, None, self.device, self.classes
+        )
 
         # Save model
-        self.checkpoint = self.cfg[CHECKPOINT][CHECKPOINT_DIR]
+        self.checkpoint = self.cfg[ConfigKeys.CHECKPOINT][ConfigKeys.CHECKPOINT_DIR]
 
     def inference(self):
         ColoredPrint.green("\nINIZIO LOOP DI INFERENZA\n" + "-" * 20)
-    
-        test_loss, test_accuracy = self.training_engine.exec_epoch(self.test_dl, TEST)
+
+        test_loss, test_accuracy = self.training_engine.exec_epoch(self.test_dl, ConfigKeys.TEST)
 
         # Mostra loss e accuracy
         print(f"Test loss: {test_loss:.3f} | Test acc: {test_accuracy:.2f}%")
@@ -146,15 +97,11 @@ class TesterCNN:
         ColoredPrint.green("\nFINE LOOP DI INFERENZA\n" + "-" * 20)
 
     def save_test_info(self, loss: float, accuracy: float) -> None:
-        path: Path = Path(self.cfg[MODEL][PRETRAINED][PATH]) / self.cfg[MODEL][PRETRAINED][FOLDER] / "general_info_training.json"
+        path: Path = (
+            Path(self.cfg[ConfigKeys.MODEL][ConfigKeys.PRETRAINED][ConfigKeys.PATH])
+            / self.cfg[ConfigKeys.MODEL][ConfigKeys.PRETRAINED][ConfigKeys.FOLDER]
+            / "general_info_training.json"
+        )
 
-        with path.open("r") as f:
-            existing_data = json.load(f)
+        sti(path, loss, accuracy)
 
-        existing_data["model_evaluation"]["test"] = {
-            "accuracy": accuracy,
-            "loss": loss
-        }
-
-        with path.open("w") as f:
-            json.dump(existing_data, f, indent=4)

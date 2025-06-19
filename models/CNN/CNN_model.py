@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-from typing import List, Dict, Any, Callable
 
 class FlexibleCNNModel(nn.Module):
     """

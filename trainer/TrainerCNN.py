@@ -26,6 +26,8 @@ from utils import (
     ColoredPrint,
     save_training_info,
     save_epoch_info,
+    generic_save_json_dict,
+    save_testing_model,
     TrainingInfo,
     GeneralTrainingInfo,
 )
@@ -61,8 +63,7 @@ matplotlib.rcParams["font.family"] = [
 # CLASSE DI TRAINER CNN
 # ------------------------------------------------------------------
 class TrainerCNN:
-    def __init__(
-        self, cfg: dict, model_config: dict = None):
+    def __init__(self, cfg: dict, model_config: dict = None):
         # config
         self.cfg: dict = cfg
         self.model_config: dict = model_config
@@ -95,29 +96,35 @@ class TrainerCNN:
         self.batch_size: int = self.cfg[ConfigKeys.DATA_SETTINGS][ConfigKeys.BATCH_SIZE]
 
         # train option
-        self.train_option: dict[str, any] = self.cfg[ConfigKeys.MODEL][ConfigKeys.TRAIN_OPTION]
-        self.transfer_learning: bool = self.train_option.get(ConfigKeys.TRANSFER_LEARNING, False)
-        self.restart_training: bool = self.train_option.get(ConfigKeys.RESTART_TRAIN, False)
+        self.train_option: dict[str, any] = self.cfg[ConfigKeys.MODEL][
+            ConfigKeys.TRAIN_OPTION
+        ]
+        self.transfer_learning: bool = self.train_option.get(
+            ConfigKeys.TRANSFER_LEARNING, False
+        )
+        self.restart_training: bool = self.train_option.get(
+            ConfigKeys.RESTART_TRAIN, False
+        )
 
         # get model
         # get model from previous training
         if self.restart_training or self.transfer_learning:
             checkpoint_model_name = (
-                Path(self.cfg[ConfigKeys.MODEL]["pretrained"]["path"])
-                / self.cfg[ConfigKeys.MODEL]["pretrained"]["folder"]
-                / "model"
-                / self.cfg[ConfigKeys.MODEL]["pretrained"]["name"]
+                Path(self.cfg[ConfigKeys.MODEL][ConfigKeys.PRETRAINED][ConfigKeys.PATH])
+                / self.cfg[ConfigKeys.MODEL][ConfigKeys.PRETRAINED][ConfigKeys.FOLDER]
+                / ConfigKeys.MODEL
+                / self.cfg[ConfigKeys.MODEL][ConfigKeys.PRETRAINED][ConfigKeys.NAME]
             )
             checkpoint = torch.load(checkpoint_model_name, map_location=self.device)
 
             if self.model_name == "custom":
-                self.model_config = checkpoint["custom_model"]
+                self.model_config = checkpoint[ConfigKeys.CUSTOM_MODEL]
 
             loaded_classes = len(checkpoint["model_config"]["class_to_idx"])
 
             self.model: nn.Module = get_model(
                 name=self.model_name,
-                num_classes=loaded_classes, 
+                num_classes=loaded_classes,
                 num_channels=self.num_channels,
                 img_size=self.image_size,
                 model_cfg=self.model_config,
@@ -130,7 +137,9 @@ class TrainerCNN:
 
             if self.transfer_learning and loaded_classes != self.num_classes:
                 last_layer: nn.Linear = self.model.classifier[-1]
-                self.model.classifier[-1] = nn.Linear(last_layer.in_features, self.num_classes)
+                self.model.classifier[-1] = nn.Linear(
+                    last_layer.in_features, self.num_classes
+                )
 
             self.model.to(self.device)
 
@@ -160,53 +169,60 @@ class TrainerCNN:
 
         # restart training with old optmizer
         if self.restart_training:
-            self.optimizer.load_state_dict(checkpoint["optimizer_state"])
+            self.optimizer.load_state_dict(checkpoint[ConfigKeys.OPTIMIZER_STATE])
 
         # lr scheduler
-        # get previous training optimizer
-        if self.restart_training:
-            self.scheduler.load_state_dict(checkpoint["scheduler_state"])
-
         # start new optimizer
+        self.scheduler_name: str = self.cfg[ConfigKeys.TRAIN][ConfigKeys.SCHEDULER][
+            ConfigKeys.SCHEDULER_TYPE
+        ]
+        self.scheduler_kwargs: dict[str, any] = self.cfg[ConfigKeys.TRAIN][
+            ConfigKeys.SCHEDULER
+        ][ConfigKeys.SCHEDULER_ARGS]
+
+        # lr warmup scheduler
+        self.normal_scheduler: bool = not self.cfg[ConfigKeys.TRAIN][
+            ConfigKeys.OPTIMIZER
+        ][ConfigKeys.WARMUP][ConfigKeys.USE_WARMUP]
+
+        if not self.normal_scheduler:
+            # dict of scheduler
+            self.warmup_scheduler: dict[str, any] = self.cfg[ConfigKeys.TRAIN][ConfigKeys.OPTIMIZER][ConfigKeys.WARMUP]
+
+            # numbers of warmup epochs
+            self.warmup_scheduler_epochs: int = self.warmup_scheduler[ConfigKeys.EPOCHS]
+            
+            # final lr 
+            self.warmup_scheduler_lr: int = self.warmup_scheduler[ConfigKeys.LR]
+
+            # numbers of epoch between an update of lr
+            self.warmup_scheduler_step_size: int = self.warmup_scheduler[   ConfigKeys.STEP_SIZE]
+
+            # calculate gamma value of scheduler
+            self.warmup_scheduler_gamma: float = (
+                self.warmup_scheduler_lr / self.lr
+            ) ** (1 / self.warmup_scheduler_epochs)
+
+            # create dict of scheduler args
+            self.scheduler_warmup_kwargs = {
+                ConfigKeys.STEP_SIZE: self.warmup_scheduler_step_size,
+                ConfigKeys.GAMMA: self.warmup_scheduler_gamma,
+            }
+
+            # create lr scheduler
+            self.scheduler_class: LR_scheduler = LR_scheduler(
+                self.scheduler_name, self.optimizer, **self.scheduler_warmup_kwargs
+            )
         else:
-            self.scheduler_name: str = self.cfg[ConfigKeys.TRAIN][ConfigKeys.SCHEDULER][
-                ConfigKeys.SCHEDULER_TYPE
-            ]
-            self.scheduler_kwargs: dict[str, any] = self.cfg[ConfigKeys.TRAIN][
-                ConfigKeys.SCHEDULER
-            ][ConfigKeys.SCHEDULER_ARGS]
+            self.scheduler_class: LR_scheduler = LR_scheduler(
+                self.scheduler_name, self.optimizer, **self.scheduler_kwargs
+            )
 
-            # lr warmup scheduler
-            self.normal_scheduler: bool = not self.cfg[ConfigKeys.TRAIN][
-                ConfigKeys.OPTIMIZER
-            ][ConfigKeys.WARMUP][ConfigKeys.USE_WARMUP]
+        self.scheduler, self.scheduler_type = self.scheduler_class.get_scheduler()
 
-            if not self.normal_scheduler:
-                self.warmup_scheduler: int = self.cfg[ConfigKeys.TRAIN][
-                    ConfigKeys.OPTIMIZER
-                ]["warmup"]
-                self.warmup_scheduler_epochs: int = self.warmup_scheduler["epochs"]
-                self.warmup_scheduler_lr: int = self.warmup_scheduler["lr"]
-                self.warmup_scheduler_step_size: int = self.warmup_scheduler[
-                    "step_size"
-                ]
-                self.warmup_scheduler_gamma: float = (
-                    self.warmup_scheduler_lr / self.lr
-                ) ** (1 / self.warmup_scheduler_epochs)
-
-                self.scheduler_warmup_kwargs = {
-                    "step_size": self.warmup_scheduler_step_size,
-                    "gamma": self.warmup_scheduler_gamma,
-                }
-                self.scheduler_class: LR_scheduler = LR_scheduler(
-                    self.scheduler_name, self.optimizer, **self.scheduler_warmup_kwargs
-                )
-            else:
-                self.scheduler_class: LR_scheduler = LR_scheduler(
-                    self.scheduler_name, self.optimizer, **self.scheduler_kwargs
-                )
-
-            self.scheduler, self.scheduler_type = self.scheduler_class.get_scheduler()
+        # get previous training scheduler
+        if self.restart_training:
+            self.scheduler.load_state_dict(checkpoint[ConfigKeys.SCHEDULER_STATE])
 
         # loss function
         self.loss = nn.CrossEntropyLoss()
@@ -221,7 +237,7 @@ class TrainerCNN:
 
         # epoche
         if self.restart_training:
-            self.start_epoch: int = checkpoint["epoch"]
+            self.start_epoch: int = checkpoint[ConfigKeys.EPOCH]
         else:
             self.start_epoch: int = 0
 
@@ -248,7 +264,9 @@ class TrainerCNN:
         checkpoint_main_dir = self.cfg[ConfigKeys.CHECKPOINT][ConfigKeys.CHECKPOINT_DIR]
 
         if self.restart_training:
-            self.model_numeration = self.cfg[ConfigKeys.MODEL][ConfigKeys.PRETRAINED][ConfigKeys.FOLDER]
+            self.model_numeration = self.cfg[ConfigKeys.MODEL][ConfigKeys.PRETRAINED][
+                ConfigKeys.FOLDER
+            ]
         else:
             self.model_numeration = f"{self.model_name}_{timestamp}"
 
@@ -279,7 +297,7 @@ class TrainerCNN:
         self.training_engine.add_writer(self.writer)
 
     def loggingInfo(self):
-        ColoredPrint.blue('-' * 20 + "\nINIZIO LOGGING TRAINING\n")
+        ColoredPrint.blue("-" * 20 + "\nINIZIO LOGGING TRAINING\n")
 
         ColoredPrint.purple(
             f"Il training viene eseguto sul device: {self.device.upper()}."
@@ -306,14 +324,12 @@ class TrainerCNN:
     def train(self) -> None:
         ColoredPrint.purple("\nINIZIO LOOP DI TRAINING\n")
 
-        ColoredPrint.purple(
-            f"Il training è stato impostato per {self.epochs} epoche."
-        )
+        ColoredPrint.purple(f"Il training è stato impostato per {self.epochs} epoche.")
 
         for epoch in range(self.start_epoch, self.epochs):
             ColoredPrint.purple(f"\nEpoca {epoch+1} di {self.epochs}")
-            
-            current_lr = self.optimizer.param_groups[0]["lr"]
+
+            current_lr = self.optimizer.param_groups[0][ConfigKeys.LR]
 
             ColoredPrint.purple(f"Learning rate di {current_lr}")
 
@@ -392,13 +408,12 @@ class TrainerCNN:
 
                 self.normal_scheduler = True
             else:
-                if self.scheduler_type == "epoch":
+                if self.scheduler_type == ConfigKeys.EPOCH:
                     self.scheduler.step()
-
 
             # istogramma dei pesi, dei bias e dei gradienti
             for name, module in self.model.named_modules():
-            # Controlla se il modulo ha parametri (esclude ReLU, MaxPool, Flatten che non hanno pesi/bias)
+                # Controlla se il modulo ha parametri (esclude ReLU, MaxPool, Flatten che non hanno pesi/bias)
                 if isinstance(module, (nn.Linear, nn.Conv2d, nn.BatchNorm2d)):
                     # Ottieni il tipo di layer come stringa (es. linear oppure Conv2d)
                     layer_type = type(module).__name__
@@ -409,14 +424,19 @@ class TrainerCNN:
                         # 'name' è il nome del layer nel modello (es. 'features' o 'classifier')
 
                         # Crea un nome del tipo: nome_blocco (conv oppurer FC) + nome_layer + nome_parametro
-                        tag_weights = f'{name}/{layer_type}/{param_name}'
-                        self.writer.add_histogram(tag_weights, param.data, global_step=epoch)
+                        tag_weights = f"{name}/{layer_type}/{param_name}"
+                        self.writer.add_histogram(
+                            tag_weights, param.data, global_step=epoch
+                        )
 
                         # Se esistono dei gradienti fai il logging
                         if param.grad is not None:
-                            tag_gradients = f'{name}/{layer_type}/gradients/{param_name}'
-                            self.writer.add_histogram(tag_gradients, param.grad.data, global_step=epoch)
-
+                            tag_gradients = (
+                                f"{name}/{layer_type}/gradients/{param_name}"
+                            )
+                            self.writer.add_histogram(
+                                tag_gradients, param.grad.data, global_step=epoch
+                            )
 
             # calcola l'early stop in base all'accuratezza/loss
             if self.early_stopping.stop:
@@ -426,7 +446,7 @@ class TrainerCNN:
         self.writer.add_hparams(
             {
                 "num_epochs": self.last_epoch,
-                "learning_rate": self.optimizer.param_groups[0]["lr"],
+                "learning_rate": self.optimizer.param_groups[0][ConfigKeys.LR],
             },
             {
                 "metric/val_best_loss": self.best_loss,
@@ -450,7 +470,7 @@ class TrainerCNN:
 
     def save_model(self, val_accuracy: float, val_loss: float, epoch: int) -> None:
         best_model = {
-            "epoch": epoch,
+            ConfigKeys.EPOCH: epoch,
             "model_state": self.model.state_dict(),
             "optimizer_state": self.optimizer.state_dict(),
             "scheduler_state": self.scheduler.state_dict(),
@@ -470,7 +490,7 @@ class TrainerCNN:
         }
 
         if self.model_name == "custom":
-            best_model["custom_model"] = self.model_config
+            best_model[ConfigKeys.CUSTOM_MODEL] = self.model_config
 
         timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
         self.file_name = f"{self.model_name}_{timestamp}.pth"
@@ -532,9 +552,9 @@ class TrainerCNN:
             scheduler_kwargs=self.scheduler_kwargs,
             warmup_kwargs=(
                 {
-                    "epoch": self.warmup_scheduler_epochs,
-                    "lr": self.warmup_scheduler_lr,
-                    "step_size": self.warmup_scheduler_step_size,
+                    ConfigKeys.EPOCH: self.warmup_scheduler_epochs,
+                    ConfigKeys.LR: self.warmup_scheduler_lr,
+                    ConfigKeys.STEP_SIZE: self.warmup_scheduler_step_size,
                 }
                 if self.cfg[ConfigKeys.TRAIN][ConfigKeys.OPTIMIZER][ConfigKeys.WARMUP][
                     ConfigKeys.USE_WARMUP
@@ -558,25 +578,14 @@ class TrainerCNN:
 
     def save_model_config(self):
         path = self.main_save_path / "model_config.json"
-        with path.open("w") as f:
-            json.dump(self.model_config, f, indent=4)
+
+        generic_save_json_dict(path, self.model_config)
+
 
     def save_config(self):
         path = self.main_save_path / "config.json"
-        with path.open("w") as f:
-            json.dump(self.cfg, f, indent=4)
+
+        generic_save_json_dict(path, self.cfg)
 
     def save_testing_model(self):
-        path = Path("config.json")
-        with path.open("r") as f:
-            existing_data = json.load(f)
-
-        existing_data[ConfigKeys.MODEL][ConfigKeys.PRETRAINED][
-            ConfigKeys.NAME
-        ] = self.file_name
-        existing_data[ConfigKeys.MODEL][ConfigKeys.PRETRAINED][
-            ConfigKeys.FOLDER
-        ] = self.main_save_path.name
-
-        with path.open("w") as f:
-            json.dump(existing_data, f, indent=4)
+        save_testing_model(self.file_name, self.main_save_path.name) 

@@ -8,6 +8,9 @@ from .Optimizer import Optimizer
 from .save_json import (
     save_training_info,
     save_epoch_info,
+    save_test_info,
+    generic_save_json_dict,
+    save_testing_model,
     TrainingInfo,
     GeneralTrainingInfo,
 )
@@ -24,6 +27,9 @@ __all__ = [
     "Optimizer",
     "save_training_info",
     "save_epoch_info",
+    "save_test_info",
+    "save_testing_model",
+    "generic_save_json_dict",
     "TrainingInfo",
     "GeneralTrainingInfo",
     "config_checker",

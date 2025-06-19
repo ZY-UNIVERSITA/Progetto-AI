@@ -5,6 +5,7 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 
+from utils.config_enum import ConfigKeys
 
 @dataclass
 class TrainingInfo:
@@ -101,13 +102,6 @@ def save_training_info(trainingInfo: GeneralTrainingInfo, filepath: Path) -> Non
         data_to_save["early_stop"] = {"use_early_stopping": False}
 
     complete_path: Path = filepath / "general_info_training.json"
-    # if complete_path.exists():
-    #     with complete_path.open("r") as f:
-    #         existing_data = json.load(f)
-    # else:
-    #     existing_data = []
-
-    # existing_data.append(data_to_save)
 
     with complete_path.open("w") as f:
         json.dump(data_to_save, f, indent=4)
@@ -151,3 +145,31 @@ def save_epoch_info(trainingInfo: TrainingInfo, filepath: Path) -> None:
         json.dump(existing_data, f, indent=4)
 
     print("Training info salvati.")
+
+def save_testing_model(file_name: str, main_save_path: str):
+    path = Path("config.json")
+    with path.open("r") as f:
+        existing_data = json.load(f)
+
+    existing_data[ConfigKeys.MODEL][ConfigKeys.PRETRAINED][
+        ConfigKeys.NAME
+    ] =file_name
+    existing_data[ConfigKeys.MODEL][ConfigKeys.PRETRAINED][
+        ConfigKeys.FOLDER
+    ] = main_save_path
+
+    with path.open("w") as f:
+        json.dump(existing_data, f, indent=4)
+
+def save_test_info(path: Path, loss: float, accuracy: float) -> None:
+    with path.open("r") as f:
+        existing_data = json.load(f)
+
+    existing_data["model_evaluation"]["test"] = {"accuracy": accuracy, "loss": loss}
+
+    with path.open("w") as f:
+        json.dump(existing_data, f, indent=4)
+
+def generic_save_json_dict(path: Path, file: dict[str, any]):
+    with path.open("w") as f:
+        json.dump(file, f, indent=4)

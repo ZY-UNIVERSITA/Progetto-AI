@@ -5,7 +5,7 @@ from typing import Tuple
 
 from tqdm import tqdm
 
-from utils import ColoredPrint, Metrics
+from utils import Metrics, ConfigKeys
 
 from torch.optim.lr_scheduler import LRScheduler
 
@@ -13,28 +13,21 @@ from torch.utils.tensorboard import SummaryWriter
 
 import seaborn as sns
 import matplotlib.pyplot as plt
-import numpy as np
-
 
 from sklearn.metrics import confusion_matrix
-
-TRAIN: str = "train"
-VAL: str = "val"
-TEST: str = "test"
-
 
 class CNNEngine:
     def __init__(
         self,
         model: nn.Module,
-        loss,
-        optimizer,
+        loss: nn.modules.loss._Loss,
+        optimizer: torch.optim.Optimizer,
         scheduler: LRScheduler,
         scheduler_type: str,
         device: str,
         classes: dict[str, int],
     ):
-        self.model: nn.Module = model
+        self.model = model
         self.loss = loss
         self.optimizer = optimizer
         self.scheduler = scheduler
@@ -54,7 +47,7 @@ class CNNEngine:
         total: int = 0
 
         mode: str = tqdm_desc
-        train: bool = tqdm_desc == TRAIN
+        train: bool = tqdm_desc == ConfigKeys.TRAIN
 
         # Training mode:
         # train: dropout e batch normalization
@@ -88,7 +81,7 @@ class CNNEngine:
                 outputs = self.model(images)
 
                 # Calcolare la perdita per tutte le immagini
-                loss = self.loss(outputs, labels)
+                loss: torch.Tensor = self.loss(outputs, labels)
 
                 # In training, calcola i gradienti e fai la retropropagazione per aggiornare i pesi
                 if train:
@@ -128,7 +121,7 @@ class CNNEngine:
         avg_loss: float = total_loss / total
         avg_acc: float = 100 * correct / total
 
-        if mode == VAL and avg_loss < self.best_loss:
+        if mode == ConfigKeys.VAL and avg_loss < self.best_loss:
             self.best_loss = avg_loss
             
             # trasforma gli indici in stringhe tramite il dizionario
