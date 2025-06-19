@@ -113,11 +113,11 @@ class TrainerCNN:
             if self.model_name == "custom":
                 self.model_config = checkpoint["custom_model"]
 
-            channels = len(checkpoint["model_config"]["class_to_idx"])
+            loaded_classes = len(checkpoint["model_config"]["class_to_idx"])
 
             self.model: nn.Module = get_model(
                 name=self.model_name,
-                num_classes=channels, 
+                num_classes=loaded_classes, 
                 num_channels=self.num_channels,
                 img_size=self.image_size,
                 model_cfg=self.model_config,
@@ -125,12 +125,12 @@ class TrainerCNN:
 
             self.model.load_state_dict(checkpoint["model_state"])
 
-            print(self.model.featuures)
+            print(self.model.features)
             print(self.model.classifier)
 
-            if self.transfer_learning and channels != self.num_channels:
+            if self.transfer_learning and loaded_classes != self.num_classes:
                 last_layer: nn.Linear = self.model.classifier[-1]
-                self.model.classifier[-1] = nn.Linear(last_layer.in_features, self.num_channels)
+                self.model.classifier[-1] = nn.Linear(last_layer.in_features, self.num_classes)
 
             self.model.to(self.device)
 
@@ -246,8 +246,13 @@ class TrainerCNN:
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 
         checkpoint_main_dir = self.cfg[ConfigKeys.CHECKPOINT][ConfigKeys.CHECKPOINT_DIR]
-        model_numeration = f"{self.model_name}_{timestamp}"
-        self.main_save_path = Path(checkpoint_main_dir) / model_numeration
+
+        if self.restart_training:
+            self.model_numeration = self.cfg[ConfigKeys.MODEL][ConfigKeys.PRETRAINED][ConfigKeys.FOLDER]
+        else:
+            self.model_numeration = f"{self.model_name}_{timestamp}"
+
+        self.main_save_path = Path(checkpoint_main_dir) / self.model_numeration
         self.main_save_path.mkdir(parents=True, exist_ok=True)
 
         self.checkpoint_path = self.main_save_path / ConfigKeys.MODEL.value
@@ -256,6 +261,7 @@ class TrainerCNN:
         self.tensorboard_path = self.main_save_path / "log"
 
         self.save_model_config()
+        self.save_config()
 
         # Tensorboard
         self.writer = SummaryWriter(self.tensorboard_path)
@@ -554,6 +560,11 @@ class TrainerCNN:
         path = self.main_save_path / "model_config.json"
         with path.open("w") as f:
             json.dump(self.model_config, f, indent=4)
+
+    def save_config(self):
+        path = self.main_save_path / "config.json"
+        with path.open("w") as f:
+            json.dump(self.cfg, f, indent=4)
 
     def save_testing_model(self):
         path = Path("config.json")
