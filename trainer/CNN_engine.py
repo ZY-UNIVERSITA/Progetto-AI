@@ -128,16 +128,9 @@ class CNNEngine:
         avg_loss: float = total_loss / total
         avg_acc: float = 100 * correct / total
 
-        # mt = Metrics(self.classes, real_y, pred_y)
-
-        # mt.report()
-
-        # mt.compute_confusion_matrix()
-
-        # matrix = mt.confusion_matrix
-
         if mode == VAL and avg_loss < self.best_loss:
             self.best_loss = avg_loss
+            
             # trasforma gli indici in stringhe tramite il dizionario
             index_to_label = {v: k for k, v in self.classes.items()}
 
@@ -175,5 +168,8 @@ class CNNEngine:
 
             plt.close()
 
+        # report sul train
+        mt = Metrics(self.classes, real_y, pred_y)
+        mt.report()
 
         return avg_loss, avg_acc
